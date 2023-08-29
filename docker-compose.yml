@@ -1,0 +1,10 @@
+version: '3.8'
+
+services:
+  bot:
+    build: ./app
+    volumes:
+      - c:\temp\11:/usr/src/db
+    env_file:
+      - ./.env.data
+    restart: "on-failure"
