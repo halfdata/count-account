@@ -79,10 +79,6 @@ BOOKS_SET_CURRENCY = {
     ),
 }
 
-INVALID_REQUEST = {
-    'default':  'Invalid request.',
-}
-
 BOOKS_CONNECTED = {
     'default': (
         'You are joined to the book <strong>{title}</strong> '
@@ -95,29 +91,6 @@ BOOKS_DELETED = {
     'default': (
         'Book <strong>{title}</strong> (currency: <strong>{currency}</strong>) '
         'successfully removed.'
-    ),
-}
-
-BOOK_CURRENCY_NOT_FOUND = {
-    'default': (
-        'Currency <strong>{currency}</strong> not found. Available currencies: '
-        '<strong>{currencies}</strong>.'
-    ),
-}
-
-BOOK_NO_BOOKS = {
-    'default': (
-        'No books found. Use the following command to create the book:\n\n'
-        '<pre>/book add My Book USD</pre>'
-    ),
-}
-
-BOOK_HELP = {
-    'default': (
-        'The following commands are available:\n'
-        '<pre>/book list</pre>\n'
-        '<pre>/book add %title% %currency%</pre>\n'
-        '<pre>/book connect %book_uid%</pre>'
     ),
 }
 
@@ -167,17 +140,9 @@ CATEGORIES_DELETED = {
     ),
 }
 
-CATEGORY_HELP = {
-    'default': (
-        'The following commands are available:\n'
-        '<pre>/category list</pre>\n'
-        '<pre>/category add %title% | %comma-separated-aliases%</pre>'
-    ),
-}
-
 CATEGORIES_WELCOME = {
     'default': (
-        'Hey. Let\'s configure categories here. Select any existing root category '
+        'Hey. Let\'s configure categories here. Select any existing category '
         'or tap <code>+ Add Category</code> to create a new one.'
     ),
 }
@@ -203,6 +168,12 @@ EXPENSES_ADD_AMOUNT = {
     'default': (
         'Add <strong>{amount} {currency}</strong> to the book '
         '<strong>{book_title}</strong>.'
+    ),
+}
+
+EXPENSES_ZERO_AMOUNT = {
+    'default': (
+        'Please enter non-zero amount.'
     ),
 }
 
@@ -235,7 +206,6 @@ EXPENSES_SUCCESSFULLY_CREATED = {
     ),
 }
 
-
-ACCESS_DENIED = {
-    'default': 'Access denied.',
+INVALID_REQUEST = {
+    'default':  'Invalid request.',
 }

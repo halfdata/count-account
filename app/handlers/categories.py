@@ -1,37 +1,23 @@
-import asyncio
-import logging
-import sys
 import re
-from os import getenv
-from typing import Any, Dict
-import functools
+from typing import Any, Optional
 
-import messages
-import models
-import settings
-from utils import __
-
-
-from datetime import datetime
-from itertools import islice
-from typing import Optional
-from aiogram import Bot, Dispatcher, F, Router, html
-from aiogram.enums import ParseMode
-from aiogram.filters import Command, CommandStart
-from aiogram.filters.callback_data import CallbackData
+from aiogram import Router
+from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import (
-    KeyboardButton,
     Message,
     CallbackQuery,
-    ReplyKeyboardMarkup,
-    ReplyKeyboardRemove,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
 )
 from aiogram.types.user import User
+
+import messages
+import models
 from handlers.user import DBUser
+from utils import __
+
 
 class CategoriesState(StatesGroup):
     parent = State()

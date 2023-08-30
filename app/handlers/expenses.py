@@ -1,37 +1,23 @@
-import asyncio
-import logging
-import sys
 import re
-from os import getenv
-from typing import Any, Dict
-import functools
-
-import messages
-import models
-import settings
-from utils import __
-
-
 from datetime import datetime
-from itertools import islice
-from typing import Optional
-from aiogram import Bot, Dispatcher, F, Router, html
-from aiogram.enums import ParseMode
-from aiogram.filters import Command, CommandStart
-from aiogram.filters.callback_data import CallbackData
+from typing import Any, Optional
+
+from aiogram import Router
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import (
-    KeyboardButton,
     Message,
     CallbackQuery,
-    ReplyKeyboardMarkup,
-    ReplyKeyboardRemove,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
 )
 from aiogram.types.user import User
+
+import messages
+import models
 from handlers.user import DBUser
+from utils import __
+
 
 class ExpensesState(StatesGroup):
     category = State()
@@ -75,12 +61,20 @@ class Expenses:
     async def expenses_message(self, message: Message, state: FSMContext) -> None:
         if re.match("^[\-\+]{0,1}\d+\.{0,1}\d*$", message.text) is None:
             return
-        amount = float(message.text)
+        amount = round(float(message.text), 2)
         book = self._active_book(message.from_user)
         if not book:
             await message.answer(
                 text=__(
                     text_dict=messages.EXPENSES_ACTIVE_BOOK_REQUIRED,
+                    lang=message.from_user.language_code
+                ),
+            )
+            return
+        if not amount:
+            await message.answer(
+                text=__(
+                    text_dict=messages.EXPENSES_ZERO_AMOUNT,
                     lang=message.from_user.language_code
                 ),
             )
@@ -92,7 +86,7 @@ class Expenses:
                 text_dict=messages.EXPENSES_ADD_AMOUNT,
                 lang=message.from_user.language_code
             ).format(
-                amount=amount,
+                amount='{:.2f}'.format(amount),
                 currency=book.currency,
                 book_title=book.title.capitalize()
             ),
@@ -183,7 +177,7 @@ class Expenses:
             id=int(data['category']),
             deleted=False
         )
-        amount = float(data['amount'])
+        amount = round(float(data['amount']), 2)
         if call.data == '/submit':
             created = datetime.utcnow()
             self.db.add_expense(
@@ -204,7 +198,7 @@ class Expenses:
                         text_dict=messages.EXPENSES_SUCCESSFULLY_CREATED_IN_CATEGORY,
                         lang=call.from_user.language_code
                     ).format(
-                        amount=amount,
+                        amount='{:.2f}'.format(amount),
                         currency=book.currency,
                         category_title=category.title.capitalize(),
                         book_title=book.title.capitalize()
@@ -216,7 +210,7 @@ class Expenses:
                         text_dict=messages.EXPENSES_SUCCESSFULLY_CREATED,
                         lang=call.from_user.language_code
                     ).format(
-                        amount=amount,
+                        amount='{:.2f}'.format(amount),
                         currency=book.currency,
                         book_title=book.title.capitalize()
                     )

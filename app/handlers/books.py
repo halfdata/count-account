@@ -1,36 +1,25 @@
-import asyncio
-import logging
-import sys
 import re
-from os import getenv
-from typing import Any, Dict
-
-import messages
-import models
-import settings
-from utils import __
-
-
 from datetime import datetime
-from itertools import islice
 from typing import Optional
-from aiogram import Bot, Dispatcher, F, Router, html
-from aiogram.enums import ParseMode
-from aiogram.filters import Command, CommandStart
-from aiogram.filters.callback_data import CallbackData
+
+from aiogram import Router
+from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import (
-    KeyboardButton,
     Message,
     CallbackQuery,
-    ReplyKeyboardMarkup,
-    ReplyKeyboardRemove,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
 )
 from aiogram.types.user import User
+
+import messages
+import models
+import settings
 from handlers.user import DBUser
+from utils import __
+
 
 class BookState(StatesGroup):
     book = State()
@@ -47,9 +36,9 @@ class Books:
     def __init__(self, db: models.DB, router: Router) -> None:
         self.db = db
         self.router = router
-        router.message.register(self.book, Command('books'))
-        router.callback_query.register(self.book_callback, BookState.book)
-        router.callback_query.register(self.action_callback, BookState.action)
+        router.message.register(self.books, Command('books'))
+        router.callback_query.register(self.books_callback, BookState.book)
+        router.callback_query.register(self.actions_callback, BookState.action)
         router.message.register(self.title_message, BookState.title)
         router.callback_query.register(self.currency_callback, BookState.currency)
         router.message.register(self.join, Command('join'))
@@ -66,7 +55,7 @@ class Books:
     def _back_button(self):
         return InlineKeyboardButton(text='Back', callback_data='/back')
 
-    async def book(
+    async def books(
         self,
         message: Message,
         state: FSMContext,
@@ -100,7 +89,7 @@ class Books:
             reply_markup=keyboard_inline,
         )
 
-    async def book_callback(self, call: CallbackQuery, state: FSMContext) -> None:
+    async def books_callback(self, call: CallbackQuery, state: FSMContext) -> None:
         await call.message.edit_reply_markup(reply_markup=None)
         if call.data == '/new':
             await state.update_data(book='/new')
@@ -108,9 +97,9 @@ class Books:
         else:
             book_id = int(call.data)
             await state.update_data(book=book_id)
-            await self.action(call.message, state, call.from_user)
+            await self.actions(call.message, state, call.from_user)
 
-    async def action(
+    async def actions(
         self,
         message: Message,
         state: FSMContext,
@@ -150,7 +139,7 @@ class Books:
             reply_markup=keyboard_inline,
         )
 
-    async def action_callback(self, call: CallbackQuery, state: FSMContext) -> None:
+    async def actions_callback(self, call: CallbackQuery, state: FSMContext) -> None:
         await call.message.edit_reply_markup(reply_markup=None)
         data = await state.get_data()
         book_id = int(data['book'])
@@ -163,7 +152,7 @@ class Books:
             await self._invalid_request(call.message, state)
             return
         if call.data == '/back':
-            await self.book(call.message, state, call.from_user)
+            await self.books(call.message, state, call.from_user)
             return
         if call.data == '/update_title':
             await self.title(call.message, state, call.from_user)
@@ -194,7 +183,7 @@ class Books:
                     lang=call.from_user.language_code
                 ).format(title=book.title.capitalize(), currency=book.currency),
             )
-            await self.book(call.message, state, call.from_user)
+            await self.books(call.message, state, call.from_user)
             return
         await self._invalid_request(call.message, state)
 
@@ -273,7 +262,7 @@ class Books:
                 lang=message.from_user.language_code
             ),
         )
-        await self.action(message, state, message.from_user)
+        await self.actions(message, state, message.from_user)
 
     async def currency(
         self,
@@ -329,7 +318,7 @@ class Books:
                     lang=call.from_user.language_code
                 ).format(title=data['title'].capitalize(), currency=data['currency'], book_uid=book_ids['book_uid']),
             )
-            await self.book(call.message, state, call.from_user)
+            await self.books(call.message, state, call.from_user)
             return
         book_id = int(data['book'])
         book = self.db.get_book_by(
@@ -347,7 +336,7 @@ class Books:
                 lang=call.from_user.language_code
             ),
         )
-        await self.action(call.message, state, call.from_user)
+        await self.actions(call.message, state, call.from_user)
 
     async def join(self, message: Message, state: FSMContext) -> None:
         """Join current user to the book."""

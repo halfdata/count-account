@@ -1,13 +1,12 @@
 """Defines class to work with database."""
-import json
 from secrets import token_urlsafe
 from typing import Any, Optional
 
 from sqlalchemy import Table, Index, Column
 from sqlalchemy import Integer, String, DateTime, Boolean, Text, Float
 from sqlalchemy import MetaData
-from sqlalchemy import create_engine, Engine, func
-from sqlalchemy import select, insert, update, delete
+from sqlalchemy import create_engine, Engine
+from sqlalchemy import select, insert, update
 from sqlalchemy.engine.base import Connection
 
 class DB:
@@ -182,7 +181,7 @@ class DB:
         with self.engine.connect() as connection:
             id = connection.execute(
                 insert(self.book_table).values(**kwargs)).inserted_primary_key.id
-            book_uid = f'{id}:' + token_urlsafe(8)
+            book_uid = f'{id}:' + token_urlsafe(12)
             connection.execute(
                 update(self.book_table)
                     .where(self.book_table.c.id == id)
