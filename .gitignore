@@ -141,4 +141,5 @@ GitHub.sublime-settings
 **/__pycache__
 .env.data
 .env.db.data
+env.data
 db/
