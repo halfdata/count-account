@@ -4,7 +4,7 @@ services:
   bot:
     build: ./app
     volumes:
-      - c:\temp\11:/usr/src/db
+      - /home/count-account-db:/usr/src/db
     env_file:
-      - ./.env.data
+      - ./env.data
     restart: "on-failure"
