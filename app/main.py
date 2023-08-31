@@ -33,7 +33,7 @@ async def main():
     await bot.set_my_commands([
         BotCommand(command='books', description='Manage books'),
         BotCommand(command='categories', description='Manage categories'),
-        # BotCommand(command='today', description='Report for today'),
+        BotCommand(command='today', description='Report for today'),
     ])
     dp = Dispatcher()
     dp.include_router(form_router)
