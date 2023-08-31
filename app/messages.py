@@ -206,6 +206,14 @@ EXPENSES_SUCCESSFULLY_CREATED = {
     ),
 }
 
+REPORTS_PER_CATEGORY_TITLE = {
+    'default': 'Per category report, {book_title} ({currency}), period: {period}',
+}
+
+REPORTS_NO_DATA = {
+    'default': 'No data for requested period.',
+}
+
 INVALID_REQUEST = {
     'default':  'Invalid request.',
 }

@@ -6,7 +6,7 @@ from sqlalchemy import Table, Index, Column
 from sqlalchemy import Integer, String, DateTime, Boolean, Text, Float
 from sqlalchemy import MetaData
 from sqlalchemy import create_engine, Engine
-from sqlalchemy import select, insert, update
+from sqlalchemy import select, insert, update, func, asc
 from sqlalchemy.engine.base import Connection
 
 class DB:
@@ -277,3 +277,23 @@ class DB:
                 insert(self.expense_table).values(**kwargs)).inserted_primary_key.id
             connection.commit()
         return expense_id
+
+    def get_expenses_per_category(self, book_id: int, from_date: DateTime, to_date: DateTime):
+        """Returns expenses groupped by categories within specified dates."""
+        with self.engine.connect() as connection:
+            statement = (select(
+                    self.expense_table.c.category_id.label('category_id'),
+                    self.category_table.c.title.label('category_title'),
+                    func.sum(self.expense_table.c.amount).label('amount')
+                )
+                .select_from(self.expense_table)
+                .join(self.category_table, self.expense_table.c.category_id == self.category_table.c.id)
+                .where(self.expense_table.c.book_id == book_id)
+                .where(self.expense_table.c.deleted == False)
+                .where(self.expense_table.c.created >= from_date)
+                .where(self.expense_table.c.created <= to_date)
+                .group_by(self.expense_table.c.category_id)
+                .order_by(asc('amount'))
+            )
+            expenses = connection.execute(statement).all()
+        return expenses
