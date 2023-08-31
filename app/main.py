@@ -11,7 +11,7 @@ import models
 from handlers.books import Books
 from handlers.categories import Categories
 from handlers.expenses import Expenses
-from handlers.reports import Reports
+# from handlers.reports import Reports
 
 DB_PATH = getenv('DB_PATH', '../db')
 TELEGRAM_TOKEN = getenv('TELEGRAM_TOKEN')
@@ -24,7 +24,7 @@ form_router = Router()
 
 books_handler = Books(db, form_router)
 categories_handler = Categories(db, form_router)
-reports_handler = Reports(db, form_router)
+# cd appreports_handler = Reports(db, form_router)
 expenses_handler = Expenses(db, form_router)
 
 
@@ -33,7 +33,7 @@ async def main():
     await bot.set_my_commands([
         BotCommand(command='books', description='Manage books'),
         BotCommand(command='categories', description='Manage categories'),
-        BotCommand(command='today', description='Report for today'),
+        # BotCommand(command='today', description='Report for today'),
     ])
     dp = Dispatcher()
     dp.include_router(form_router)
