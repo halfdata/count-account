@@ -1,4 +1,5 @@
-from datetime import datetime, time, timedelta
+import calendar
+from datetime import datetime, date, time, timedelta
 from io import BytesIO
 from typing import Any, Optional
 
@@ -32,6 +33,7 @@ class Reports:
         self.router = router
         router.message.register(self.today, Command('today'))
         router.message.register(self.yesterday, Command('yesterday'))
+        router.message.register(self.current_month, Command('current_month'))
 
     async def _invalid_request(self, message: Message, state: FSMContext) -> None:
         await state.clear()
@@ -88,6 +90,23 @@ class Reports:
             from_user=from_user
         )
 
+    async def current_month(
+        self,
+        message: Message,
+        state: FSMContext,
+        from_user: Optional[User] = None
+    ) -> None:
+        """Expenses during current month."""
+        ct = datetime.utcnow()
+        _, last_day = calendar.monthrange(ct.year, ct.month)
+        await self.per_category_report(
+            message,
+            state,
+            from_date=datetime.combine(date(ct.year, ct.month, 1), time.min),
+            to_date=datetime.combine(date(ct.year, ct.month, last_day), time.max),
+            from_user=from_user
+        )
+
     async def per_category_report(
         self,
         message: Message,
@@ -136,7 +155,7 @@ class Reports:
         bars = ax.barh(categories, amounts, label=categories)
         fig.suptitle(
             __(
-                text_dict=messages.REPORTS_PER_CATEGORY_TITLE,
+                text_dict=messages.REPORTS_BOOK_AND_PERIOD,
                 lang=message.from_user.language_code
             ).format(
                 book_title=book.title.capitalize(),
