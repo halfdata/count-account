@@ -287,7 +287,10 @@ class DB:
                     func.sum(self.expense_table.c.amount).label('amount')
                 )
                 .select_from(self.expense_table)
-                .join(self.category_table, self.expense_table.c.category_id == self.category_table.c.id)
+                .join(
+                    self.category_table, self.expense_table.c.category_id == self.category_table.c.id,
+                    isouter=True
+                )
                 .where(self.expense_table.c.book_id == book_id)
                 .where(self.expense_table.c.deleted == False)
                 .where(self.expense_table.c.created >= from_date)

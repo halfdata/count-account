@@ -34,6 +34,7 @@ async def main():
         BotCommand(command='books', description='Manage books'),
         BotCommand(command='categories', description='Manage categories'),
         BotCommand(command='today', description='Report for today'),
+        BotCommand(command='yesterday', description='Report for yesterday'),
     ])
     dp = Dispatcher()
     dp.include_router(form_router)

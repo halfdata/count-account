@@ -1,4 +1,4 @@
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 from io import BytesIO
 from typing import Any, Optional
 
@@ -14,7 +14,6 @@ from aiogram.types import (
 )
 from aiogram.types.user import User
 from aiogram.types.input_file import BufferedInputFile
-import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 
 import messages
@@ -32,6 +31,7 @@ class Reports:
         self.db = db
         self.router = router
         router.message.register(self.today, Command('today'))
+        router.message.register(self.yesterday, Command('yesterday'))
 
     async def _invalid_request(self, message: Message, state: FSMContext) -> None:
         await state.clear()
@@ -49,7 +49,6 @@ class Reports:
             return False
         book_id = int(dbuser.user_options['active_book'])
         book = self.db.get_book_by(
-            user_id=from_user.id,
             id=book_id,
             deleted=False
         )
@@ -70,6 +69,22 @@ class Reports:
             state,
             from_date=datetime.combine(current_time, time.min),
             to_date=datetime.combine(current_time, time.max),
+            from_user=from_user
+        )
+
+    async def yesterday(
+        self,
+        message: Message,
+        state: FSMContext,
+        from_user: Optional[User] = None
+    ) -> None:
+        """Report for yesterday's expenses."""
+        yesterday_time = datetime.utcnow() - timedelta(days=1)
+        await self.per_category_report(
+            message,
+            state,
+            from_date=datetime.combine(yesterday_time, time.min),
+            to_date=datetime.combine(yesterday_time, time.max),
             from_user=from_user
         )
 
@@ -103,7 +118,10 @@ class Reports:
         amounts = []
         for record in records:
             if record.amount:
-                categories.append(record.category_title.capitalize())
+                if record.category_title:
+                    categories.append(record.category_title.capitalize())
+                else:
+                    categories.append('Uncategorized')
                 amounts.append(record.amount)
         if not categories:
             await message.answer(
@@ -113,10 +131,10 @@ class Reports:
                 ),
             )
             return
-
+        total_amount = sum(amounts)
         fig, ax = plt.subplots()
         bars = ax.barh(categories, amounts, label=categories)
-        ax.set_title(
+        fig.suptitle(
             __(
                 text_dict=messages.REPORTS_PER_CATEGORY_TITLE,
                 lang=message.from_user.language_code
@@ -126,8 +144,9 @@ class Reports:
                 period=(from_date_str if from_date_str == to_date_str else f'{from_date_str} ... {to_date_str}')
             )
         )
+        ax.set_title(f'Total: {total_amount:.2f} {book.currency}', fontweight='bold')
         ax.bar_label(bars, label_type='center', fmt='{:.2f}', color='lightgray')
-
+        ax.set_xlabel(book.currency)
         buffer = BytesIO()
         plt.savefig(buffer, format='png', bbox_inches='tight')
         buffer.seek(0)
