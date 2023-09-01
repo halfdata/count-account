@@ -111,8 +111,8 @@ class Reports:
             from_date=from_date,
             to_date=to_date
         )
-        from_date_str = f'{from_date.year}-{from_date.month}-{from_date.day}'
-        to_date_str = f'{to_date.year}-{to_date.month}-{to_date.day}'
+        from_date_str = f'{from_date.year}-{from_date.month:02}-{from_date.day:02}'
+        to_date_str = f'{to_date.year}-{to_date.month:02}-{to_date.day:02}'
  
         categories = []
         amounts = []
