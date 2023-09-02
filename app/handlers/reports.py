@@ -19,8 +19,7 @@ import matplotlib.pyplot as plt
 
 import messages
 import models
-from handlers.user import DBUser
-from utils import __
+from utils import __, DBUser
 
 
 class Reports:
@@ -37,12 +36,7 @@ class Reports:
 
     async def _invalid_request(self, message: Message, state: FSMContext) -> None:
         await state.clear()
-        await message.answer(
-            text=__(
-                text_dict=messages.INVALID_REQUEST,
-                lang=message.from_user.language_code
-            )
-        )
+        await message.answer(text='Invalid request.')
 
     def _active_book(self, from_user: User) -> Any:
         """Returns active book for current user."""
@@ -50,10 +44,7 @@ class Reports:
         if not dbuser.user_options['active_book']:
             return False
         book_id = int(dbuser.user_options['active_book'])
-        book = self.db.get_book_by(
-            id=book_id,
-            deleted=False
-        )
+        book = self.db.get_book_by(id=book_id, deleted=False)
         if not book:
             return False
         return book
@@ -64,7 +55,8 @@ class Reports:
         state: FSMContext,
         from_user: Optional[User] = None
     ) -> None:
-        """Report for today's expenses."""
+        """Today's expenses."""
+        await state.clear()
         current_time = datetime.utcnow()
         await self.per_category_report(
             message,
@@ -80,7 +72,8 @@ class Reports:
         state: FSMContext,
         from_user: Optional[User] = None
     ) -> None:
-        """Report for yesterday's expenses."""
+        """Yesterday's expenses."""
+        await state.clear()
         yesterday_time = datetime.utcnow() - timedelta(days=1)
         await self.per_category_report(
             message,
@@ -96,7 +89,8 @@ class Reports:
         state: FSMContext,
         from_user: Optional[User] = None
     ) -> None:
-        """Expenses during current month."""
+        """Expenses for the current month."""
+        await state.clear()
         ct = datetime.utcnow()
         _, last_day = calendar.monthrange(ct.year, ct.month)
         await self.per_category_report(
@@ -115,13 +109,15 @@ class Reports:
         to_date: datetime,
         from_user: Optional[User] = None
     ) -> None:
+        """Per category expenses."""
         from_user = from_user or message.from_user
+        dbuser = DBUser(self.db, from_user)
         book = self._active_book(from_user)
         if not book:
             await message.answer(
                 text=__(
-                    text_dict=messages.CATEGORIES_ACTIVE_BOOK_REQUIRED,
-                    lang=from_user.language_code
+                    text_dict=messages.ACTIVE_BOOK_REQUIRED,
+                    lang=dbuser.user_options['hl']
                 ),
             )
             return
@@ -146,21 +142,22 @@ class Reports:
             await message.answer(
                 text=__(
                     text_dict=messages.REPORTS_NO_DATA,
-                    lang=from_user.language_code
+                    lang=dbuser.user_options['hl']
                 ),
             )
             return
         total_amount = sum(amounts)
+        period = (from_date_str if from_date_str == to_date_str else f'{from_date_str} ... {to_date_str}')
         fig, ax = plt.subplots()
         bars = ax.barh(categories, amounts, label=categories)
         fig.suptitle(
             __(
                 text_dict=messages.REPORTS_BOOK_AND_PERIOD,
-                lang=message.from_user.language_code
+                lang=dbuser.user_options['hl']
             ).format(
                 book_title=book.title.capitalize(),
                 currency=book.currency,
-                period=(from_date_str if from_date_str == to_date_str else f'{from_date_str} ... {to_date_str}')
+                period=period
             )
         )
         ax.set_title(f'Total: {total_amount:.2f} {book.currency}', fontweight='bold')

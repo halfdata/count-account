@@ -15,8 +15,7 @@ from aiogram.types.user import User
 
 import messages
 import models
-from handlers.user import DBUser
-from utils import __
+from utils import __, DBUser
 
 
 class CategoriesState(StatesGroup):
@@ -39,12 +38,7 @@ class Categories:
 
     async def _invalid_request(self, message: Message, state: FSMContext) -> None:
         await state.clear()
-        await message.answer(
-            text=__(
-                text_dict=messages.INVALID_REQUEST,
-                lang=message.from_user.language_code
-            )
-        )
+        await message.answer(text='Invalid request.')
 
     def _active_book(self, from_user: User) -> Any:
         """Returns active book for current user."""
@@ -69,6 +63,7 @@ class Categories:
         message: Message,
         state: FSMContext
     ) -> None:
+        await state.clear()
         await state.update_data(parent='0')
         await self._categories(message, state, message.from_user)
 
@@ -80,12 +75,13 @@ class Categories:
     ) -> None:
         await state.set_state(CategoriesState.category)
         from_user = from_user or message.from_user
+        dbuser = DBUser(self.db, from_user)
         book = self._active_book(from_user)
         if not book:
             await message.answer(
                 text=__(
                     text_dict=messages.CATEGORIES_ACTIVE_BOOK_REQUIRED,
-                    lang=from_user.language_code
+                    lang=dbuser.user_options['hl']
                 ),
             )
             return
@@ -127,7 +123,7 @@ class Categories:
             await message.answer(
                 text=__(
                     text_dict=messages.CATEGORIES_WELCOME,
-                    lang=from_user.language_code
+                    lang=dbuser.user_options['hl']
                 ),
                 reply_markup=keyboard_inline,
             )
@@ -135,19 +131,20 @@ class Categories:
             await message.answer(
                 text=__(
                     text_dict=messages.CATEGORIES_WELCOME_TO_CATEGORY,
-                    lang=from_user.language_code
+                    lang=dbuser.user_options['hl']
                 ).format(title=parent_category.title.capitalize()),
                 reply_markup=keyboard_inline,
             )
 
     async def categories_callback(self, call: CallbackQuery, state: FSMContext) -> None:
         await call.message.edit_reply_markup(reply_markup=None)
+        dbuser = DBUser(self.db, call.from_user)
         book = self._active_book(call.from_user)
         if not book:
             await call.message.answer(
                 text=__(
                     text_dict=messages.CATEGORIES_ACTIVE_BOOK_REQUIRED,
-                    lang=call.from_user.language_code
+                    lang=dbuser.user_options['hl']
                 ),
             )
             return
@@ -180,7 +177,7 @@ class Categories:
                 await call.message.answer(
                     text=__(
                         text_dict=messages.CATEGORIES_DELETED,
-                        lang=call.from_user.language_code
+                        lang=dbuser.user_options['hl']
                     ).format(title=category.title.capitalize()),
                 )
             else:
@@ -220,20 +217,22 @@ class Categories:
     ) -> None:
         await state.set_state(CategoriesState.title)
         from_user = from_user or message.from_user
+        dbuser = DBUser(self.db, from_user)
         await message.answer(
             text=__(
                 text_dict=messages.CATEGORIES_ADD_TITLE,
-                lang=from_user.language_code
+                lang=dbuser.user_options['hl']
             ),
         )
 
     async def title_message(self, message: Message, state: FSMContext) -> None:
+        dbuser = DBUser(self.db, message.from_user)
         book = self._active_book(message.from_user)
         if not book:
             await message.answer(
                 text=__(
                     text_dict=messages.CATEGORIES_ACTIVE_BOOK_REQUIRED,
-                    lang=message.from_user.language_code
+                    lang=dbuser.user_options['hl']
                 ),
             )
             return
@@ -243,7 +242,7 @@ class Categories:
             await message.answer(
                 text=__(
                     text_dict=messages.CATEGORIES_TITLE_TOO_LONG,
-                    lang=message.from_user.language_code
+                    lang=dbuser.user_options['hl']
                 ),
             )
             return
@@ -251,7 +250,7 @@ class Categories:
             await message.answer(
                 text=__(
                     text_dict=messages.CATEGORIES_TITLE_TOO_SHORT,
-                    lang=message.from_user.language_code
+                    lang=dbuser.user_options['hl']
                 ),
             )
             return
@@ -259,7 +258,7 @@ class Categories:
             await message.answer(
                 text=__(
                     text_dict=messages.CATEGORIES_TITLE_AVOID_SLASH,
-                    lang=message.from_user.language_code
+                    lang=dbuser.user_options['hl']
                 ),
             )
             return
@@ -280,7 +279,7 @@ class Categories:
             await message.answer(
                 text=__(
                     text_dict=messages.CATEGORIES_ALREADY_EXISTS,
-                    lang=message.from_user.language_code
+                    lang=dbuser.user_options['hl']
                 ).format(title=title.capitalize()),
             )
             return
@@ -296,7 +295,7 @@ class Categories:
             await message.answer(
                 text=__(
                     text_dict=messages.CATEGORIES_SUCCESSFULLY_CREATED,
-                    lang=message.from_user.language_code
+                    lang=dbuser.user_options['hl']
                 ).format(title=title.capitalize()),
             )
             await self._categories(message, state, message.from_user)
@@ -314,7 +313,7 @@ class Categories:
         await message.answer(
             text=__(
                 text_dict=messages.CATEGORIES_TITLE_UPDATED,
-                lang=message.from_user.language_code
+                lang=dbuser.user_options['hl']
             ),
         )
         await self._categories(message, state, message.from_user)

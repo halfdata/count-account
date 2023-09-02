@@ -12,6 +12,7 @@ from handlers.books import Books
 from handlers.categories import Categories
 from handlers.expenses import Expenses
 from handlers.reports import Reports
+from handlers.settings import Settings
 
 DB_PATH = getenv('DB_PATH', '../db')
 TELEGRAM_TOKEN = getenv('TELEGRAM_TOKEN')
@@ -22,6 +23,7 @@ if not TELEGRAM_TOKEN:
 db = models.DB(f'sqlite:///{DB_PATH}/db.sqlite3')
 form_router = Router()
 
+settings_handler = Settings(db, form_router)
 books_handler = Books(db, form_router)
 categories_handler = Categories(db, form_router)
 reports_handler = Reports(db, form_router)
@@ -36,6 +38,7 @@ async def main():
         BotCommand(command='today', description='Today\'s expenses'),
         BotCommand(command='yesterday', description='Yesterday\'s expenses'),
         BotCommand(command='current_month', description='Expenses for the current month'),
+        BotCommand(command='settings', description='Settings'),
     ])
     dp = Dispatcher()
     dp.include_router(form_router)

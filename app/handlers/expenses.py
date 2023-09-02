@@ -15,8 +15,7 @@ from aiogram.types.user import User
 
 import messages
 import models
-from handlers.user import DBUser
-from utils import __
+from utils import __, DBUser
 
 
 class ExpensesState(StatesGroup):
@@ -37,12 +36,7 @@ class Expenses:
 
     async def _invalid_request(self, message: Message, state: FSMContext) -> None:
         await state.clear()
-        await message.answer(
-            text=__(
-                text_dict=messages.INVALID_REQUEST,
-                lang=message.from_user.language_code
-            )
-        )
+        await message.answer(text='Invalid request.')
 
     def _active_book(self, from_user: User) -> Any:
         """Returns active book for current user."""
@@ -61,13 +55,14 @@ class Expenses:
     async def expenses_message(self, message: Message, state: FSMContext) -> None:
         if re.match("^[\-\+]{0,1}\d+\.{0,1}\d*$", message.text) is None:
             return
+        dbuser = DBUser(self.db, message.from_user)
         amount = round(float(message.text), 2)
         book = self._active_book(message.from_user)
         if not book:
             await message.answer(
                 text=__(
-                    text_dict=messages.EXPENSES_ACTIVE_BOOK_REQUIRED,
-                    lang=message.from_user.language_code
+                    text_dict=messages.ACTIVE_BOOK_REQUIRED,
+                    lang=dbuser.user_options['hl']
                 ),
             )
             return
@@ -75,7 +70,7 @@ class Expenses:
             await message.answer(
                 text=__(
                     text_dict=messages.EXPENSES_ZERO_AMOUNT,
-                    lang=message.from_user.language_code
+                    lang=dbuser.user_options['hl']
                 ),
             )
             return
@@ -84,7 +79,7 @@ class Expenses:
         await message.answer(
             text=__(
                 text_dict=messages.EXPENSES_ADD_AMOUNT,
-                lang=message.from_user.language_code
+                lang=dbuser.user_options['hl']
             ).format(
                 amount='{:.2f}'.format(amount),
                 currency=book.currency,
@@ -101,12 +96,13 @@ class Expenses:
     ) -> None:
         await state.set_state(ExpensesState.category)
         from_user = from_user or message.from_user
+        dbuser = DBUser(self.db, from_user)
         book = self._active_book(from_user)
         if not book:
             await message.answer(
                 text=__(
-                    text_dict=messages.EXPENSES_ACTIVE_BOOK_REQUIRED,
-                    lang=from_user.language_code
+                    text_dict=messages.ACTIVE_BOOK_REQUIRED,
+                    lang=dbuser.user_options['hl']
                 ),
             )
             return
@@ -143,7 +139,7 @@ class Expenses:
             await message.answer(
                 text=__(
                     text_dict=messages.EXPENSES_CATEGORY_SELECT_CATEGORY,
-                    lang=from_user.language_code
+                    lang=dbuser.user_options['hl']
                 ).format(category_title=parent_category.title.capitalize()),
                 reply_markup=keyboard_inline,
             )
@@ -155,19 +151,20 @@ class Expenses:
             await message.answer(
                 text=__(
                     text_dict=messages.EXPENSES_ROOT_SELECT_CATEGORY,
-                    lang=from_user.language_code
+                    lang=dbuser.user_options['hl']
                 ),
                 reply_markup=keyboard_inline,
             )
 
     async def categories_callback(self, call: CallbackQuery, state: FSMContext) -> None:
         await call.message.edit_reply_markup(reply_markup=None)
+        dbuser = DBUser(self.db, call.from_user)
         book = self._active_book(call.from_user)
         if not book:
             await call.message.answer(
                 text=__(
-                    text_dict=messages.EXPENSES_ACTIVE_BOOK_REQUIRED,
-                    lang=call.from_user.language_code
+                    text_dict=messages.ACTIVE_BOOK_REQUIRED,
+                    lang=dbuser.user_options['hl']
                 ),
             )
             return
@@ -196,7 +193,7 @@ class Expenses:
                 await call.message.answer(
                     text=__(
                         text_dict=messages.EXPENSES_SUCCESSFULLY_CREATED_IN_CATEGORY,
-                        lang=call.from_user.language_code
+                        lang=dbuser.user_options['hl']
                     ).format(
                         amount='{:.2f}'.format(amount),
                         currency=book.currency,
@@ -208,7 +205,7 @@ class Expenses:
                 await call.message.answer(
                     text=__(
                         text_dict=messages.EXPENSES_SUCCESSFULLY_CREATED,
-                        lang=call.from_user.language_code
+                        lang=dbuser.user_options['hl']
                     ).format(
                         amount='{:.2f}'.format(amount),
                         currency=book.currency,

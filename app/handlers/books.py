@@ -16,9 +16,8 @@ from aiogram.types.user import User
 
 import messages
 import models
-import settings
-from handlers.user import DBUser
-from utils import __
+import utils
+from utils import __, DBUser
 
 
 class BookState(StatesGroup):
@@ -45,12 +44,7 @@ class Books:
 
     async def _invalid_request(self, message: Message, state: FSMContext) -> None:
         await state.clear()
-        await message.answer(
-            text=__(
-                text_dict=messages.INVALID_REQUEST,
-                lang=message.from_user.language_code
-            )
-        )
+        await message.answer(text='Invalid request.')
 
     def _back_button(self):
         return InlineKeyboardButton(text='Back', callback_data='/back')
@@ -64,6 +58,7 @@ class Books:
         await state.clear()
         await state.set_state(BookState.book)
         from_user = from_user or message.from_user
+        dbuser = DBUser(self.db, from_user)
         books = self.db.get_books_by(
             user_id=from_user.id,
             deleted=False
@@ -84,7 +79,7 @@ class Books:
         await message.answer(
             text=__(
                 text_dict=messages.BOOKS_WELCOME,
-                lang=from_user.language_code
+                lang=dbuser.user_options['hl']
             ),
             reply_markup=keyboard_inline,
         )
@@ -107,6 +102,7 @@ class Books:
     ) -> None:
         await state.set_state(BookState.action)
         from_user = from_user or message.from_user
+        dbuser = DBUser(self.db, from_user)
         data = await state.get_data()
         book_id = int(data['book'])
         book = self.db.get_book_by(
@@ -134,13 +130,14 @@ class Books:
         await message.answer(
             text=__(
                 text_dict=messages.BOOKS_SELECTED,
-                lang=message.from_user.language_code
+                lang=dbuser.user_options['hl']
             ).format(title=book.title.capitalize(), currency=book.currency, book_uid=book.book_uid),
             reply_markup=keyboard_inline,
         )
 
     async def actions_callback(self, call: CallbackQuery, state: FSMContext) -> None:
         await call.message.edit_reply_markup(reply_markup=None)
+        dbuser = DBUser(self.db, call.from_user)
         data = await state.get_data()
         book_id = int(data['book'])
         book = self.db.get_book_by(
@@ -167,7 +164,7 @@ class Books:
             await call.message.answer(
                 text=__(
                     text_dict=messages.BOOKS_CONNECTED,
-                    lang=call.from_user.language_code
+                    lang=dbuser.user_options['hl']
                 ).format(title=book.title.capitalize(), currency=book.currency),
             )
             return
@@ -180,7 +177,7 @@ class Books:
             await call.message.answer(
                 text=__(
                     text_dict=messages.BOOKS_DELETED,
-                    lang=call.from_user.language_code
+                    lang=dbuser.user_options['hl']
                 ).format(title=book.title.capitalize(), currency=book.currency),
             )
             await self.books(call.message, state, call.from_user)
@@ -195,20 +192,22 @@ class Books:
     ) -> None:
         await state.set_state(BookState.title)
         from_user = from_user or message.from_user
+        dbuser = DBUser(self.db, from_user)
         await message.answer(
             text=__(
                 text_dict=messages.BOOKS_ADD_TITLE,
-                lang=from_user.language_code
+                lang=dbuser.user_options['hl']
             ),
         )
 
     async def title_message(self, message: Message, state: FSMContext) -> None:
+        dbuser = DBUser(self.db, message.from_user)
         title = re.sub('\s{2,}', ' ', message.text.strip().lower())
         if len(title) > 31:
             await message.answer(
                 text=__(
                     text_dict=messages.BOOKS_TITLE_TOO_LONG,
-                    lang=message.from_user.language_code
+                    lang=dbuser.user_options['hl']
                 ),
             )
             return
@@ -216,7 +215,7 @@ class Books:
             await message.answer(
                 text=__(
                     text_dict=messages.BOOKS_TITLE_TOO_SHORT,
-                    lang=message.from_user.language_code
+                    lang=dbuser.user_options['hl']
                 ),
             )
             return
@@ -224,7 +223,7 @@ class Books:
             await message.answer(
                 text=__(
                     text_dict=messages.BOOKS_TITLE_AVOID_SLASH,
-                    lang=message.from_user.language_code
+                    lang=dbuser.user_options['hl']
                 ),
             )
             return
@@ -237,7 +236,7 @@ class Books:
             await message.answer(
                 text=__(
                     text_dict=messages.BOOKS_ALREADY_EXISTS,
-                    lang=message.from_user.language_code
+                    lang=dbuser.user_options['hl']
                 ),
             )
             return
@@ -259,7 +258,7 @@ class Books:
         await message.answer(
             text=__(
                 text_dict=messages.BOOKS_TITLE_UPDATED,
-                lang=message.from_user.language_code
+                lang=dbuser.user_options['hl']
             ),
         )
         await self.actions(message, state, message.from_user)
@@ -271,12 +270,14 @@ class Books:
         from_user: Optional[User] = None
     ) -> None:
         await state.set_state(BookState.currency)
+        from_user = from_user or message.from_user
+        dbuser = DBUser(self.db, from_user)
         button_groups = []
         buttons = [
             InlineKeyboardButton(
                 text=currency,
                 callback_data=currency
-            ) for currency in settings.CURRENCIES
+            ) for currency in utils.CURRENCIES
         ]
         for button in buttons:
             if len(button_groups) < 1 or len(button_groups[-1]) > 3:
@@ -286,19 +287,20 @@ class Books:
         await message.answer(
             text=__(
                 text_dict=messages.BOOKS_SET_CURRENCY,
-                lang=message.from_user.language_code
+                lang=dbuser.user_options['hl']
             ),
             reply_markup=keyboard_inline,
         )
 
     async def currency_callback(self, call: CallbackQuery, state: FSMContext) -> None:
         await call.message.edit_reply_markup(reply_markup=None)
+        dbuser = DBUser(self.db, call.from_user)
         currency = call.data
-        if currency not in settings.CURRENCIES:
+        if currency not in utils.CURRENCIES:
             await call.message.answer(
                 text=__(
                     text_dict=messages.BOOKS_CURRENCY_invalid_request,
-                    lang=call.from_user.language_code
+                    lang=dbuser.user_options['hl']
                 ),
             )
             return
@@ -315,7 +317,7 @@ class Books:
             await call.message.answer(
                 text=__(
                     text_dict=messages.BOOKS_SUCCESSFULLY_CREATED,
-                    lang=call.from_user.language_code
+                    lang=dbuser.user_options['hl']
                 ).format(title=data['title'].capitalize(), currency=data['currency'], book_uid=book_ids['book_uid']),
             )
             await self.books(call.message, state, call.from_user)
@@ -333,7 +335,7 @@ class Books:
         await call.message.answer(
             text=__(
                 text_dict=messages.BOOKS_CURRENCY_UPDATED,
-                lang=call.from_user.language_code
+                lang=dbuser.user_options['hl']
             ),
         )
         await self.actions(call.message, state, call.from_user)
@@ -354,6 +356,6 @@ class Books:
         await message.answer(
             text=__(
                 text_dict=messages.BOOKS_CONNECTED,
-                lang=message.from_user.language_code
+                lang=dbuser.user_options['hl']
             ).format(title=book.title.capitalize(), currency=book.currency),
         )
