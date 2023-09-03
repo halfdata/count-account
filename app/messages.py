@@ -1,3 +1,22 @@
+START = {
+    'default': (
+        'Welcome to Count Account, the Telegram bot that helps you to track '
+        'expenses. Create the book or join existing one and drop your '
+        'expenses into appropriate categories. Analyze daily and monthly '
+        'reports.\n\n'
+        'Set desired language, you can always change it via '
+        '<strong>Settings</strong> menu.'
+    ),
+    'ru': (
+        'Добро пожаловать в Count Account, Телеграм бот, который помогает '
+        'отслеживать ваши траты. Создайте свою книгу учета или присоединитесь '
+        'к уже созданной. После этого вы сможете сохранять свои траты в '
+        'подходящей категории и анализировать дневные или месячные отчеты.\n\n'
+        'Установите желаемый язык интерфейса ниже. Вы всегда можете изменить '
+        'его через меню <strong>Настройки</strong>.'
+    ),
+}
+
 BOOKS_WELCOME = {
     'default': (
         'Hey. Let\'s configure books here. Select any existing book or tap '

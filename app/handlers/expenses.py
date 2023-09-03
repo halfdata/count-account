@@ -2,7 +2,7 @@ import re
 from datetime import datetime
 from typing import Any, Optional
 
-from aiogram import Router
+from aiogram import Dispatcher, F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import (
@@ -26,12 +26,10 @@ class ExpensesState(StatesGroup):
 class Expenses:
     """Handlers for expenses workflow."""
     db: models.DB
-    router: Router
 
-    def __init__(self, db: models.DB, router: Router) -> None:
+    def __init__(self, db: models.DB, dp: Dispatcher, router: Router) -> None:
         self.db = db
-        self.router = router
-        router.message.register(self.expenses_message)
+        dp.message.register(self.expenses_message, F.text.regexp("^[\-\+]{0,1}\d+\.{0,1}\d*$"))
         router.callback_query.register(self.categories_callback, ExpensesState.category)
 
     async def _invalid_request(self, message: Message, state: FSMContext) -> None:
@@ -53,8 +51,7 @@ class Expenses:
         return InlineKeyboardButton(text='Back', callback_data='/back')
 
     async def expenses_message(self, message: Message, state: FSMContext) -> None:
-        if re.match("^[\-\+]{0,1}\d+\.{0,1}\d*$", message.text) is None:
-            return
+        await state.clear()
         dbuser = DBUser(self.db, message.from_user)
         amount = round(float(message.text), 2)
         book = self._active_book(message.from_user)

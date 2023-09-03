@@ -2,7 +2,7 @@ import re
 from datetime import datetime
 from typing import Optional
 
-from aiogram import Router
+from aiogram import Dispatcher, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
@@ -33,19 +33,17 @@ class BooksState(StatesGroup):
 class Books:
     """Handlers for /books workflow."""
     db: models.DB
-    router: Router
 
-    def __init__(self, db: models.DB, router: Router) -> None:
+    def __init__(self, db: models.DB, dp: Dispatcher, router: Router) -> None:
         self.db = db
-        self.router = router
-        router.message.register(self.books, Command('books'))
+        dp.message.register(self.books, Command('books'))
         router.callback_query.register(self.books_callback, BooksState.book)
         router.callback_query.register(self.actions_callback, BooksState.action)
         router.message.register(self.title_message, BooksState.title)
         router.callback_query.register(self.currency_callback, BooksState.currency)
         router.callback_query.register(self.categories_callback, BooksState.category)
         router.message.register(self.category_title_message, BooksState.category_title)
-        router.message.register(self.join, Command('join'))
+        dp.message.register(self.join, Command('join'))
 
     async def _invalid_request(self, message: Message, state: FSMContext) -> None:
         await state.clear()

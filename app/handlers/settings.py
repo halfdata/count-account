@@ -1,6 +1,6 @@
 from typing import Optional
 
-from aiogram import Router
+from aiogram import Dispatcher, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
@@ -25,12 +25,10 @@ class SettingsState(StatesGroup):
 class Settings:
     """Handlers for /books workflow."""
     db: models.DB
-    router: Router
 
-    def __init__(self, db: models.DB, router: Router) -> None:
+    def __init__(self, db: models.DB, dp: Dispatcher, router: Router) -> None:
         self.db = db
-        self.router = router
-        router.message.register(self.settings, Command('settings'))
+        dp.message.register(self.settings, Command('settings'))
         router.callback_query.register(self.settings_callback, SettingsState.parameter)
         router.callback_query.register(self.languages_callback, SettingsState.language)
 
@@ -94,7 +92,6 @@ class Settings:
             if len(button_groups) < 1 or len(button_groups[-1]) > 3:
                 button_groups.append([])
             button_groups[-1].append(button)
-        keyboard_inline = InlineKeyboardMarkup(inline_keyboard=button_groups)
         button_groups.append([
             self._back_button(),
         ])

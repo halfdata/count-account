@@ -3,7 +3,7 @@ from datetime import datetime, date, time, timedelta
 from io import BytesIO
 from typing import Any, Optional
 
-from aiogram import Router
+from aiogram import Dispatcher, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
@@ -25,14 +25,12 @@ from utils import __, DBUser
 class Reports:
     """Handlers for reports workflow."""
     db: models.DB
-    router: Router
 
-    def __init__(self, db: models.DB, router: Router) -> None:
+    def __init__(self, db: models.DB, dp: Dispatcher, router: Router) -> None:
         self.db = db
-        self.router = router
-        router.message.register(self.today, Command('today'))
-        router.message.register(self.yesterday, Command('yesterday'))
-        router.message.register(self.current_month, Command('current_month'))
+        dp.message.register(self.today, Command('today'))
+        dp.message.register(self.yesterday, Command('yesterday'))
+        dp.message.register(self.current_month, Command('current_month'))
 
     async def _invalid_request(self, message: Message, state: FSMContext) -> None:
         await state.clear()
