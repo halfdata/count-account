@@ -9,7 +9,6 @@ from aiogram.types.bot_command import BotCommand
 
 import models
 from handlers.books import Books
-from handlers.categories import Categories
 from handlers.expenses import Expenses
 from handlers.reports import Reports
 from handlers.settings import Settings
@@ -25,7 +24,6 @@ form_router = Router()
 
 settings_handler = Settings(db, form_router)
 books_handler = Books(db, form_router)
-categories_handler = Categories(db, form_router)
 reports_handler = Reports(db, form_router)
 expenses_handler = Expenses(db, form_router)
 
@@ -34,7 +32,6 @@ async def main():
     bot = Bot(token=TELEGRAM_TOKEN, parse_mode=ParseMode.HTML)
     await bot.set_my_commands([
         BotCommand(command='books', description='Manage books'),
-        BotCommand(command='categories', description='Manage categories'),
         BotCommand(command='today', description='Today\'s expenses'),
         BotCommand(command='yesterday', description='Yesterday\'s expenses'),
         BotCommand(command='current_month', description='Expenses for the current month'),
