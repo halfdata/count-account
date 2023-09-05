@@ -76,7 +76,7 @@ class Books:
                 selected_mark = ''
             buttons.append(
                 InlineKeyboardButton(
-                    text=f'{selected_mark}{book.title.capitalize()}',
+                    text=f'{selected_mark}{book.title}',
                     callback_data=str(book.id)
                 )
             )
@@ -92,7 +92,7 @@ class Books:
                 selected_mark = ''
             buttons.append(
                 InlineKeyboardButton(
-                    text=f'{selected_mark}{book.title.capitalize()}',
+                    text=f'{selected_mark}{book.title}',
                     callback_data=f'shared-{book.id}'
                 )
             )
@@ -168,7 +168,7 @@ class Books:
                 text_dict=messages.BOOKS_SELECTED,
                 lang=dbuser.user_options['hl']
             ).format(
-                title=shared_book.title.capitalize(),
+                title=shared_book.title,
                 currency=shared_book.currency,
                 book_uid=shared_book.book_uid
             ),
@@ -201,7 +201,7 @@ class Books:
                     text_dict=messages.BOOKS_CONNECTED,
                     lang=dbuser.user_options['hl']
                 ).format(
-                    title=shared_book.title.capitalize(),
+                    title=shared_book.title,
                     currency=shared_book.currency
                 ),
             )
@@ -217,7 +217,7 @@ class Books:
                     text_dict=messages.BOOKS_DISCONNECTED,
                     lang=dbuser.user_options['hl']
                 ).format(
-                    title=shared_book.title.capitalize(),
+                    title=shared_book.title,
                     currency=shared_book.currency
                 ),
             )
@@ -278,7 +278,7 @@ class Books:
             text=__(
                 text_dict=messages.BOOKS_SELECTED,
                 lang=dbuser.user_options['hl']
-            ).format(title=book.title.capitalize(), currency=book.currency, book_uid=book.book_uid),
+            ).format(title=book.title, currency=book.currency, book_uid=book.book_uid),
             reply_markup=keyboard_inline,
         )
 
@@ -315,7 +315,7 @@ class Books:
                 text=__(
                     text_dict=messages.BOOKS_CONNECTED,
                     lang=dbuser.user_options['hl']
-                ).format(title=book.title.capitalize(), currency=book.currency),
+                ).format(title=book.title, currency=book.currency),
             )
             return
         if call.data == '/delete':
@@ -328,7 +328,7 @@ class Books:
                 text=__(
                     text_dict=messages.BOOKS_DELETED,
                     lang=dbuser.user_options['hl']
-                ).format(title=book.title.capitalize(), currency=book.currency),
+                ).format(title=book.title, currency=book.currency),
             )
             await self.books(call.message, state, call.from_user)
             return
@@ -352,7 +352,7 @@ class Books:
 
     async def title_message(self, message: Message, state: FSMContext) -> None:
         dbuser = DBUser(self.db, message.from_user)
-        title = re.sub('\s{2,}', ' ', message.text.strip().lower())
+        title = re.sub('\s{2,}', ' ', message.text.strip())
         if len(title) > 31:
             await message.answer(
                 text=__(
@@ -468,7 +468,7 @@ class Books:
                 text=__(
                     text_dict=messages.BOOKS_SUCCESSFULLY_CREATED,
                     lang=dbuser.user_options['hl']
-                ).format(title=data['title'].capitalize(), currency=data['currency'], book_uid=book_ids['book_uid']),
+                ).format(title=data['title'], currency=data['currency'], book_uid=book_ids['book_uid']),
             )
             await self.books(call.message, state, call.from_user)
             return
@@ -533,7 +533,7 @@ class Books:
         button_groups = []
         buttons = [
             InlineKeyboardButton(
-                text=category.title.capitalize(),
+                text=category.title,
                 callback_data=str(category.id)
             ) for category in categories
         ]
@@ -573,7 +573,7 @@ class Books:
                 text=__(
                     text_dict=messages.CATEGORIES_WELCOME_TO_CATEGORY,
                     lang=dbuser.user_options['hl']
-                ).format(title=parent_category.title.capitalize()),
+                ).format(title=parent_category.title),
                 reply_markup=keyboard_inline,
             )
 
@@ -619,7 +619,7 @@ class Books:
                     text=__(
                         text_dict=messages.CATEGORIES_DELETED,
                         lang=dbuser.user_options['hl']
-                    ).format(title=category.title.capitalize()),
+                    ).format(title=category.title),
                 )
             else:
                 await state.update_data(parent_category=0)
@@ -681,7 +681,7 @@ class Books:
         if not book:
             await self._invalid_request(message, state)
             return
-        title = re.sub('\s{2,}', ' ', message.text.strip().lower())
+        title = re.sub('\s{2,}', ' ', message.text.strip())
         if len(title) > 31:
             await message.answer(
                 text=__(
@@ -724,7 +724,7 @@ class Books:
                 text=__(
                     text_dict=messages.CATEGORIES_ALREADY_EXISTS,
                     lang=dbuser.user_options['hl']
-                ).format(title=title.capitalize()),
+                ).format(title=title),
             )
             return
         if data['category'] == '/new':
@@ -738,7 +738,7 @@ class Books:
                 text=__(
                     text_dict=messages.CATEGORIES_SUCCESSFULLY_CREATED,
                     lang=dbuser.user_options['hl']
-                ).format(title=title.capitalize()),
+                ).format(title=title),
             )
             await self._categories(message, state, message.from_user)
             return
@@ -791,7 +791,7 @@ class Books:
                     text=__(
                         text_dict=messages.BOOKS_DISABLED,
                         lang=dbuser.user_options['hl']
-                    ).format(title=book.title.capitalize(), currency=book.currency),
+                    ).format(title=book.title, currency=book.currency),
                 )
                 return
         dbuser.update_active_book(book.id)
@@ -799,7 +799,7 @@ class Books:
             text=__(
                 text_dict=messages.BOOKS_CONNECTED,
                 lang=dbuser.user_options['hl']
-            ).format(title=book.title.capitalize(), currency=book.currency),
+            ).format(title=book.title, currency=book.currency),
         )
         return
 

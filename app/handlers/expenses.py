@@ -66,7 +66,7 @@ class Expenses:
             ).format(
                 amount='{:.2f}'.format(amount),
                 currency=book.currency,
-                book_title=book.title.capitalize()
+                book_title=book.title
             ),
         )
         await self.categories(message, state, message.from_user)
@@ -105,7 +105,7 @@ class Expenses:
         button_groups = []
         buttons = [
             InlineKeyboardButton(
-                text=category.title.capitalize(),
+                text=category.title,
                 callback_data=str(category.id)
             ) for category in categories
         ]
@@ -123,7 +123,7 @@ class Expenses:
                 text=__(
                     text_dict=messages.EXPENSES_CATEGORY_SELECT_CATEGORY,
                     lang=dbuser.user_options['hl']
-                ).format(category_title=parent_category.title.capitalize()),
+                ).format(category_title=parent_category.title),
                 reply_markup=keyboard_inline,
             )
         else:
@@ -180,8 +180,8 @@ class Expenses:
                     ).format(
                         amount='{:.2f}'.format(amount),
                         currency=book.currency,
-                        category_title=category.title.capitalize(),
-                        book_title=book.title.capitalize()
+                        category_title=category.title,
+                        book_title=book.title
                     )
                 )
             else:
@@ -192,7 +192,7 @@ class Expenses:
                     ).format(
                         amount='{:.2f}'.format(amount),
                         currency=book.currency,
-                        book_title=book.title.capitalize()
+                        book_title=book.title
                     )
                 )
             return

@@ -121,7 +121,7 @@ class Reports:
         for record in records:
             if record.amount:
                 if record.category_title:
-                    categories.append(record.category_title.capitalize())
+                    categories.append(record.category_title)
                 else:
                     categories.append('Uncategorized')
                 amounts.append(record.amount)
@@ -142,7 +142,7 @@ class Reports:
                 text_dict=messages.REPORTS_BOOK_AND_PERIOD,
                 lang=dbuser.user_options['hl']
             ).format(
-                book_title=book.title.capitalize(),
+                book_title=book.title,
                 currency=book.currency,
                 period=period
             )
