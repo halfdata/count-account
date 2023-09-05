@@ -23,6 +23,7 @@ from utils import __, DBUser
 class BooksState(StatesGroup):
     book = State()
     action = State()
+    shared_action = State()
     title = State()
     currency = State()
     parent_category = State()
@@ -39,6 +40,7 @@ class Books:
         dp.message.register(self.books, Command('books'))
         router.callback_query.register(self.books_callback, BooksState.book)
         router.callback_query.register(self.actions_callback, BooksState.action)
+        router.callback_query.register(self.shared_actions_callback, BooksState.shared_action)
         router.message.register(self.title_message, BooksState.title)
         router.callback_query.register(self.currency_callback, BooksState.currency)
         router.callback_query.register(self.categories_callback, BooksState.category)
@@ -66,13 +68,36 @@ class Books:
             user_id=from_user.id,
             deleted=False
         )
+        
         button_groups = []
-        buttons = [
-            InlineKeyboardButton(
-                text=book.title.capitalize(),
-                callback_data=str(book.id)
-            ) for book in books
-        ]
+        buttons = []
+        for book in books:
+            if book.id == dbuser.user_options['active_book']:
+                selected_mark = '✅ '
+            else:
+                selected_mark = ''
+            buttons.append(
+                InlineKeyboardButton(
+                    text=f'{selected_mark}{book.title.capitalize()}',
+                    callback_data=str(book.id)
+                )
+            )
+        shared_books = self.db.get_shared_books_by(
+            user_id=from_user.id,
+            disabled=False,
+            deleted=False
+        )
+        for book in shared_books:
+            if book.book_id == dbuser.user_options['active_book']:
+                selected_mark = '✅ '
+            else:
+                selected_mark = ''
+            buttons.append(
+                InlineKeyboardButton(
+                    text=f'{selected_mark}{book.title.capitalize()}',
+                    callback_data=f'shared-{book.id}'
+                )
+            )
         for button in buttons:
             if len(button_groups) < 1 or len(button_groups[-1]) > 2:
                 button_groups.append([])
@@ -92,10 +117,104 @@ class Books:
         if call.data == '/new':
             await state.update_data(book='/new')
             await self.title(call.message, state, call.from_user)
+        elif call.data.startswith('shared-'):
+            shared_book_id = int(call.data.replace('shared-', ''))
+            await state.update_data(book=shared_book_id)
+            await self.shared_actions(call.message, state, call.from_user)
         else:
             book_id = int(call.data)
             await state.update_data(book=book_id)
             await self.actions(call.message, state, call.from_user)
+
+    async def shared_actions(
+        self,
+        message: Message,
+        state: FSMContext,
+        from_user: Optional[User] = None
+    ) -> None:
+        await state.set_state(BooksState.shared_action)
+        from_user = from_user or message.from_user
+        dbuser = DBUser(self.db, from_user)
+        data = await state.get_data()
+        shared_book_id = int(data['book'])
+        shared_book = self.db.get_shared_book_by(
+            id=shared_book_id,
+            user_id=from_user.id,
+            disabled=False,
+            deleted=False
+        )
+        if not shared_book:
+            await self._invalid_request(message, state)
+            return
+        button_groups = [
+            [
+                InlineKeyboardButton(text='Join', callback_data='/join'),
+                InlineKeyboardButton(text='Disconnect', callback_data='/disconnect'),
+                self._back_button(),
+            ],
+        ]
+        keyboard_inline = InlineKeyboardMarkup(inline_keyboard=button_groups)
+        await message.answer(
+            text=__(
+                text_dict=messages.BOOKS_SELECTED,
+                lang=dbuser.user_options['hl']
+            ).format(
+                title=shared_book.title.capitalize(),
+                currency=shared_book.currency,
+                book_uid=shared_book.book_uid
+            ),
+            reply_markup=keyboard_inline,
+        )
+
+    async def shared_actions_callback(self, call: CallbackQuery, state: FSMContext) -> None:
+        await call.message.edit_reply_markup(reply_markup=None)
+        dbuser = DBUser(self.db, call.from_user)
+        data = await state.get_data()
+        shared_book_id = int(data['book'])
+        shared_book = self.db.get_shared_book_by(
+            id=shared_book_id,
+            user_id=call.from_user.id,
+            disabled=False,
+            deleted=False
+        )
+        if not shared_book:
+            await self._invalid_request(call.message, state)
+            return
+        if call.data == '/back':
+            await self.books(call.message, state, call.from_user)
+            return
+        if call.data == '/join':
+            await state.clear()
+            dbuser = DBUser(self.db, call.from_user)
+            dbuser.update_active_book(shared_book.book_id)
+            await call.message.answer(
+                text=__(
+                    text_dict=messages.BOOKS_CONNECTED,
+                    lang=dbuser.user_options['hl']
+                ).format(
+                    title=shared_book.title.capitalize(),
+                    currency=shared_book.currency
+                ),
+            )
+            return
+        if call.data == '/disconnect':
+            await state.clear()
+            dbuser = DBUser(self.db, call.from_user)
+            self.db.update_shared_book(id=shared_book_id, deleted=True)
+            if dbuser.user_options['active_book'] == shared_book.book_id:
+                dbuser.update_active_book(0)
+            await call.message.answer(
+                text=__(
+                    text_dict=messages.BOOKS_DISCONNECTED,
+                    lang=dbuser.user_options['hl']
+                ).format(
+                    title=shared_book.title.capitalize(),
+                    currency=shared_book.currency
+                ),
+            )
+            await self.books(call.message, state, call.from_user)
+            return
+        await self._invalid_request(call.message, state)
 
     async def actions(
         self,
@@ -621,6 +740,27 @@ class Books:
             await self._invalid_request(message, state)
             return
         dbuser = DBUser(self.db, message.from_user)
+        if book.user_id != dbuser.user.id:
+            shared_book = self.db.get_shared_book_by(
+                user_id=dbuser.user.id,
+                book_id=book.id,
+                deleted=False
+            )
+            if not shared_book:
+                self.db.add_shared_book(
+                    user_id=dbuser.user.id,
+                    book_id=book.id,
+                    disabled=False,
+                    deleted=False
+                )
+            elif shared_book.disabled:
+                await message.answer(
+                    text=__(
+                        text_dict=messages.BOOKS_DISABLED,
+                        lang=dbuser.user_options['hl']
+                    ).format(title=book.title.capitalize(), currency=book.currency),
+                )
+                return
         dbuser.update_active_book(book.id)
         await message.answer(
             text=__(
@@ -628,3 +768,5 @@ class Books:
                 lang=dbuser.user_options['hl']
             ).format(title=book.title.capitalize(), currency=book.currency),
         )
+        return
+

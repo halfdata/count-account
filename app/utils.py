@@ -45,6 +45,28 @@ class DBUser:
         self.user_options = {key: DEFAULT_USER_OPTIONS[key] for key in DEFAULT_USER_OPTIONS}
         self.user_options.update(json.loads(self.user.options))
 
+    def active_book(self) -> Any:
+        """Returns active book for the user."""
+        if not self.user_options['active_book']:
+            return False
+        book = self.db.get_book_by(
+            id=self.user_options['active_book'],
+            deleted=False
+        )
+        if not book:
+            return False
+        if book.user_id == self.from_user.id:
+            return book
+        shared_book = self.db.get_shared_book_by(
+            book_id=self.user_options['active_book'],
+            user_id=self.from_user.id,
+            disabled=False,
+            deleted=False
+        )
+        if shared_book:
+            return book
+        return False
+
     def update_active_book(self, book_id: int):
         """Update active book for current user."""
         self.user_options['active_book'] = book_id

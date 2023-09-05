@@ -119,6 +119,17 @@ BOOKS_CONNECTED = {
     ),
 }
 
+BOOKS_DISABLED = {
+    'default': (
+        'You can not join the book <strong>{title}</strong> '
+        '(currency: <strong>{currency}</strong>). '
+    ),
+    'ru': (
+        'Вы не можете активировать учетную книгу <strong>{title}</strong> '
+        '(валюта: <strong>{currency}</strong>). '
+    ),
+}
+
 BOOKS_DELETED = {
     'default': (
         'Book <strong>{title}</strong> (currency: <strong>{currency}</strong>) '
@@ -127,6 +138,19 @@ BOOKS_DELETED = {
     'ru': (
         'Учетная книга <strong>{title}</strong> (валюта: <strong>{currency}</strong>) '
         'удалена.'
+    ),
+}
+
+BOOKS_DISCONNECTED = {
+    'default': (
+        'Book <strong>{title}</strong> (currency: <strong>{currency}</strong>) '
+        'was excluded from your list. You can re-join this book using special '
+        'command provided by book\'s owner.'
+    ),
+    'ru': (
+        'Учетная книга <strong>{title}</strong> (валюта: <strong>{currency}</strong>) '
+        'исключена из вашего спсиска. Вы можете переприсоединиться к ней, '
+        'используя специальную команду (спросите у автора книги).'
     ),
 }
 

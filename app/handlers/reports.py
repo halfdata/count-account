@@ -36,17 +36,6 @@ class Reports:
         await state.clear()
         await message.answer(text='Invalid request.')
 
-    def _active_book(self, from_user: User) -> Any:
-        """Returns active book for current user."""
-        dbuser = DBUser(self.db, from_user)
-        if not dbuser.user_options['active_book']:
-            return False
-        book_id = int(dbuser.user_options['active_book'])
-        book = self.db.get_book_by(id=book_id, deleted=False)
-        if not book:
-            return False
-        return book
-
     async def today(
         self,
         message: Message,
@@ -110,7 +99,7 @@ class Reports:
         """Per category expenses."""
         from_user = from_user or message.from_user
         dbuser = DBUser(self.db, from_user)
-        book = self._active_book(from_user)
+        book = dbuser.active_book()
         if not book:
             await message.answer(
                 text=__(

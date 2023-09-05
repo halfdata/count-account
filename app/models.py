@@ -88,6 +88,17 @@ class DB:
             Index("idx_expenses_created", "created"),
             Index("idx_expenses_date", "year", "month", "day"),
         )
+        self.shared_book_table = Table(
+            "shared_books",
+            self.metadata_obj,
+            Column("id", Integer, primary_key=True, autoincrement=True),
+            Column("user_id", Integer),
+            Column("book_id", Integer),
+            Column("disabled", Boolean, default=False),
+            Column("deleted", Boolean, default=False),
+            Index("idx_shared_books_user_id", "user_id"),
+            Index("idx_shared_books_book_id", "book_id"),
+        )
 
     def add_log_record(self, **kwargs) -> int:
         """Insert new log record."""
@@ -300,3 +311,96 @@ class DB:
             )
             expenses = connection.execute(statement).all()
         return expenses
+
+    def get_shared_books_by(self, *,
+                            user_id: Optional[int] = None,
+                            book_id: Optional[int] = None,
+                            disabled: Optional[bool] = None,
+                            deleted: Optional[bool] = None,
+                            offset: Optional[int] = 0,
+                            number: Optional[int] = 100) -> list[Any]:
+        """Get sahred books from DB."""
+        with self.engine.connect() as connection:
+            statement = (select(
+                    self.shared_book_table.c.id.label('id'),
+                    self.shared_book_table.c.book_id.label('book_id'),
+                    self.book_table.c.user_id.label('owner_id'),
+                    self.book_table.c.book_uid.label('book_uid'),
+                    self.book_table.c.title.label('title'),
+                    self.book_table.c.currency.label('currency'),
+                    self.book_table.c.created.label('created'),
+                    self.book_table.c.deleted.label('book_deleted'),
+                    self.shared_book_table.c.disabled.label('disabled'),
+                    self.shared_book_table.c.deleted.label('deleted')
+                )
+                .select_from(self.shared_book_table)
+                .join(self.book_table, self.shared_book_table.c.book_id == self.book_table.c.id)
+                .order_by(self.book_table.c.created.desc(),
+                          self.book_table.c.id.desc())
+                .offset(offset)
+                .limit(number))
+            if user_id is not None:
+                statement = statement.where(self.shared_book_table.c.user_id == user_id)
+            if book_id is not None:
+                statement = statement.where(self.shared_book_table.c.book_id == book_id)
+            if disabled is not None:
+                statement = statement.where(self.shared_book_table.c.disabled == disabled)
+            if deleted is not None:
+                statement = statement.where(self.shared_book_table.c.deleted == deleted)
+                statement = statement.where(self.book_table.c.deleted == deleted)
+            books = connection.execute(statement).all()
+        return books
+
+    def get_shared_book_by(self, *,
+                    id: Optional[int] = None,
+                    user_id: Optional[int] = None,
+                    book_id: Optional[int] = None,
+                    disabled: Optional[bool] = None,
+                    deleted: Optional[bool] = None) -> Any:
+        """Get shared book from DB."""
+        with self.engine.connect() as connection:
+            statement = (select(
+                    self.shared_book_table.c.id.label('id'),
+                    self.shared_book_table.c.book_id.label('book_id'),
+                    self.book_table.c.user_id.label('owner_id'),
+                    self.book_table.c.book_uid.label('book_uid'),
+                    self.book_table.c.title.label('title'),
+                    self.book_table.c.currency.label('currency'),
+                    self.book_table.c.created.label('created'),
+                    self.book_table.c.deleted.label('book_deleted'),
+                    self.shared_book_table.c.disabled.label('disabled'),
+                    self.shared_book_table.c.deleted.label('deleted')
+                )
+                .select_from(self.shared_book_table)
+                .join(self.book_table, self.shared_book_table.c.book_id == self.book_table.c.id)
+            )
+            if id is not None:
+                statement = statement.where(self.shared_book_table.c.id == id)
+            if user_id is not None:
+                statement = statement.where(self.shared_book_table.c.user_id == user_id)
+            if book_id is not None:
+                statement = statement.where(self.shared_book_table.c.book_id == book_id)
+            if disabled is not None:
+                statement = statement.where(self.shared_book_table.c.disabled == disabled)
+            if deleted is not None:
+                statement = statement.where(self.shared_book_table.c.deleted == deleted)
+                statement = statement.where(self.book_table.c.deleted == deleted)
+            statement = statement.limit(1)
+            book_record = connection.execute(statement).first()
+        return book_record
+
+    def add_shared_book(self, **kwargs) -> int:
+        """Insert new shared book and return its id."""
+        with self.engine.connect() as connection:
+            id = connection.execute(
+                insert(self.shared_book_table).values(**kwargs)).inserted_primary_key.id
+            connection.commit()
+        return id
+
+    def update_shared_book(self, id: int, **kwargs):
+        """Update book."""
+        with self.engine.connect() as connection:
+            connection.execute(update(self.shared_book_table)
+                .where(self.shared_book_table.c.id == id)
+                .values(**kwargs))
+            connection.commit()
