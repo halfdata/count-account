@@ -14,7 +14,8 @@ from aiogram.types.user import User
 
 import messages
 import models
-from utils import __, DBUser, LANGUAGES
+from utils import __, back_button
+from utils import DBUser, LANGUAGES
 
 
 class SettingsState(StatesGroup):
@@ -36,9 +37,6 @@ class Settings:
         await state.clear()
         await message.answer(text='Invalid request.')
 
-    def _back_button(self):
-        return InlineKeyboardButton(text='Back', callback_data='/back')
-
     async def settings(
         self,
         message: Message,
@@ -52,7 +50,7 @@ class Settings:
         button_groups = [
             [
                 InlineKeyboardButton(
-                    text='Edit Language',
+                    text=__(messages.BUTTON_LANGUAGE, lang=dbuser.user_options['hl']),
                     callback_data='/language'
                 ),
             ]
@@ -93,7 +91,7 @@ class Settings:
                 button_groups.append([])
             button_groups[-1].append(button)
         button_groups.append([
-            self._back_button(),
+            back_button(dbuser.user_options['hl']),
         ])
         keyboard_inline = InlineKeyboardMarkup(inline_keyboard=button_groups)
         await message.answer(

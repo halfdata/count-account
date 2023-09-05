@@ -17,7 +17,8 @@ from aiogram.types.user import User
 import messages
 import models
 import utils
-from utils import __, DBUser
+from utils import __, back_button
+from utils import DBUser
 
 
 class BooksState(StatesGroup):
@@ -50,9 +51,6 @@ class Books:
     async def _invalid_request(self, message: Message, state: FSMContext) -> None:
         await state.clear()
         await message.answer(text='Invalid request.')
-
-    def _back_button(self):
-        return InlineKeyboardButton(text='Back', callback_data='/back')
 
     async def books(
         self,
@@ -102,7 +100,12 @@ class Books:
             if len(button_groups) < 1 or len(button_groups[-1]) > 2:
                 button_groups.append([])
             button_groups[-1].append(button)
-        button_groups.append([InlineKeyboardButton(text="+ Add Book", callback_data='/new')])
+        button_groups.append([
+            InlineKeyboardButton(
+                text=__(messages.BUTTON_ADD_BOOK, lang=dbuser.user_options['hl']),
+                callback_data='/new'
+            )
+        ])
         keyboard_inline = InlineKeyboardMarkup(inline_keyboard=button_groups)
         await message.answer(
             text=__(
@@ -148,9 +151,15 @@ class Books:
             return
         button_groups = [
             [
-                InlineKeyboardButton(text='Join', callback_data='/join'),
-                InlineKeyboardButton(text='Disconnect', callback_data='/disconnect'),
-                self._back_button(),
+                InlineKeyboardButton(
+                    text=__(messages.BUTTON_JOIN, lang=dbuser.user_options['hl']),
+                    callback_data='/join'
+                ),
+                InlineKeyboardButton(
+                    text=__(messages.BUTTON_DISCONNECT, lang=dbuser.user_options['hl']),
+                    callback_data='/disconnect'
+                ),
+                back_button(dbuser.user_options['hl']),
             ],
         ]
         keyboard_inline = InlineKeyboardMarkup(inline_keyboard=button_groups)
@@ -237,16 +246,31 @@ class Books:
             return
         button_groups = [
             [
-                InlineKeyboardButton(text='Edit Title', callback_data='/update_title'),
-                InlineKeyboardButton(text='Edit Currency', callback_data='/update_currency'),
-                InlineKeyboardButton(text='Edit Categories', callback_data='/update_categories'),
+                InlineKeyboardButton(
+                    text=__(messages.BUTTON_TITLE, lang=dbuser.user_options['hl']),
+                    callback_data='/update_title'
+                ),
+                InlineKeyboardButton(
+                    text=__(messages.BUTTON_CURRENCY, lang=dbuser.user_options['hl']),
+                    callback_data='/update_currency'
+                ),
+                InlineKeyboardButton(
+                    text=__(messages.BUTTON_CATEGORIES, lang=dbuser.user_options['hl']),
+                    callback_data='/update_categories'
+                ),
             ],
             [
-                InlineKeyboardButton(text='Join', callback_data='/join'),
-                InlineKeyboardButton(text='Remove', callback_data='/delete'),
+                InlineKeyboardButton(
+                    text=__(messages.BUTTON_JOIN, lang=dbuser.user_options['hl']),
+                    callback_data='/join'
+                ),
+                InlineKeyboardButton(
+                    text=__(messages.BUTTON_REMOVE, lang=dbuser.user_options['hl']),
+                    callback_data='/delete'
+                ),
             ],
             [
-                self._back_button(),
+                back_button(dbuser.user_options['hl']),
             ]
         ]
         keyboard_inline = InlineKeyboardMarkup(inline_keyboard=button_groups)
@@ -519,12 +543,21 @@ class Books:
             button_groups[-1].append(button)
         if parent_category:
             button_groups.append([
-                InlineKeyboardButton(text="Edit Title", callback_data='/update_title'),
-                InlineKeyboardButton(text="Remove", callback_data='/delete'),
+                InlineKeyboardButton(
+                    text=__(messages.BUTTON_TITLE, lang=dbuser.user_options['hl']),
+                    callback_data='/update_title'
+                ),
+                InlineKeyboardButton(
+                    text=__(messages.BUTTON_REMOVE, lang=dbuser.user_options['hl']),
+                    callback_data='/delete'
+                ),
             ])
         button_groups.append([
-            InlineKeyboardButton(text="+ Add Category", callback_data='/new'),
-            self._back_button()
+            InlineKeyboardButton(
+                text=__(messages.BUTTON_ADD_CATEGORY, lang=dbuser.user_options['hl']),
+                callback_data='/new'
+            ),
+            back_button(dbuser.user_options['hl'])
         ])
         keyboard_inline = InlineKeyboardMarkup(inline_keyboard=button_groups)
         if not parent_category:

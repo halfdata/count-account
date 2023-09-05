@@ -1,6 +1,8 @@
 import json
 import models
+import messages
 from typing import Any
+from aiogram.types import InlineKeyboardButton
 from aiogram.types.user import User
 
 LANGUAGES = {
@@ -76,6 +78,13 @@ class DBUser:
         """Update language for current user."""
         self.user_options['hl'] = language
         self.db.update_user(id=self.user.id, options=json.dumps(self.user_options))
+
+
+def back_button(hl: str = 'en'):
+    return InlineKeyboardButton(
+        text=__(messages.BUTTON_BACK, lang=hl),
+        callback_data='/back'
+    )
 
 def __(text_dict: dict[str, str], lang: str = 'en'):
     """Get message text."""

@@ -14,7 +14,8 @@ from aiogram.types.user import User
 
 import messages
 import models
-from utils import __, DBUser
+from utils import __, back_button
+from utils import DBUser
 
 
 class ExpensesState(StatesGroup):
@@ -34,9 +35,6 @@ class Expenses:
     async def _invalid_request(self, message: Message, state: FSMContext) -> None:
         await state.clear()
         await message.answer(text='Invalid request.')
-
-    def _back_button(self):
-        return InlineKeyboardButton(text='Back', callback_data='/back')
 
     async def expenses_message(self, message: Message, state: FSMContext) -> None:
         await state.clear()
@@ -118,7 +116,7 @@ class Expenses:
         if parent_category:
             button_groups.append([
                 InlineKeyboardButton(text="Submit", callback_data='/submit'),
-                self._back_button(),
+                back_button(dbuser.user_options['hl']),
             ])
             keyboard_inline = InlineKeyboardMarkup(inline_keyboard=button_groups)
             await message.answer(

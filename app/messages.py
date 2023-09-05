@@ -351,3 +351,53 @@ ACTIVE_BOOK_REQUIRED = {
         '<code>/books</code>, или отправив соответствующую команду.'
     ),
 }
+
+BUTTON_BACK = {
+    'default': '« Back',
+    'ru': '« Назад',
+}
+
+BUTTON_ADD_BOOK = {
+    'default': '+ Add Book',
+    'ru': '+ Создать',
+}
+
+BUTTON_ADD_CATEGORY = {
+    'default': '+ Add Category',
+    'ru': '+ Создать',
+}
+
+BUTTON_REMOVE = {
+    'default': '✕ Remove',
+    'ru': '✕ Удалить',
+}
+
+BUTTON_TITLE = {
+    'default': '✎ Title',
+    'ru': '✎ Название',
+}
+
+BUTTON_CURRENCY = {
+    'default': '✎ Currency',
+    'ru': '✎ Валюта',
+}
+
+BUTTON_CATEGORIES = {
+    'default': '✎ Categories',
+    'ru': '✎ Категории',
+}
+
+BUTTON_JOIN = {
+    'default': '✓ Join',
+    'ru': '✓ Активировать',
+}
+
+BUTTON_DISCONNECT = {
+    'default': '✕ Disconnect',
+    'ru': '✕ Удалить',
+}
+
+BUTTON_LANGUAGE = {
+    'default': '✎ Language',
+    'ru': '✎ Язык',
+}
