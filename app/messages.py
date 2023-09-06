@@ -354,6 +354,11 @@ ACTIVE_BOOK_REQUIRED = {
     ),
 }
 
+BUTTON_SUBMIT = {
+    'default': '✓ Submit',
+    'ru': '✓ Сохранить',
+}
+
 BUTTON_BACK = {
     'default': '« Back',
     'ru': '« Назад',
@@ -462,4 +467,9 @@ NOVEMBER = {
 DECEMBER = {
     'default': 'December',
     'ru': 'Декабрь',
+}
+
+TOTAL = {
+    'default': 'Total',
+    'ru': 'Итого',
 }

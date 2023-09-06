@@ -115,7 +115,10 @@ class Expenses:
             button_groups[-1].append(button)
         if parent_category:
             button_groups.append([
-                InlineKeyboardButton(text="Submit", callback_data='/submit'),
+                InlineKeyboardButton(
+                    text=__(messages.BUTTON_SUBMIT, lang=dbuser.user_options['hl']),
+                    callback_data='/submit'
+                ),
                 back_button(dbuser.user_options['hl']),
             ])
             keyboard_inline = InlineKeyboardMarkup(inline_keyboard=button_groups)
@@ -128,7 +131,10 @@ class Expenses:
             )
         else:
             button_groups.append([
-                InlineKeyboardButton(text="Submit", callback_data='/submit'),
+                InlineKeyboardButton(
+                    text=__(messages.BUTTON_SUBMIT, lang=dbuser.user_options['hl']),
+                    callback_data='/submit'
+                ),
             ])
             keyboard_inline = InlineKeyboardMarkup(inline_keyboard=button_groups)
             await message.answer(

@@ -168,7 +168,8 @@ class Reports:
                 period=period
             )
         )
-        ax.set_title(f'Total: {total_amount:.2f} {book.currency}', fontweight='bold')
+        total_label = __(messages.TOTAL, lang=dbuser.user_options['hl'])
+        ax.set_title(f'{total_label}: {total_amount:.2f} {book.currency}', fontweight='bold')
         low_values = [f'{v:.2f}' if v < 0.15 * max_amount else '' for v in amounts]
         nonlow_values = [f'{v:.2f}' if v >= 0.15 * max_amount else '' for v in amounts]
         ax.bar_label(bars, nonlow_values,
@@ -232,7 +233,8 @@ class Reports:
                 period=period
             )
         )
-        ax.set_title(f'Total: {total_amount:.2f} {book.currency}', fontweight='bold')
+        total_label = __(messages.TOTAL, lang=dbuser.user_options['hl'])
+        ax.set_title(f'{total_label}: {total_amount:.2f} {book.currency}', fontweight='bold')
 
         low_values = [f'{v:.2f}' if v < 0.15 * max_amount else '' for v in amounts]
         nonlow_values = [f'{v:.2f}' if v >= 0.15 * max_amount else '' for v in amounts]
