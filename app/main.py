@@ -33,6 +33,14 @@ async def main():
         BotCommand(command='current_month', description='Expenses for the current month'),
         BotCommand(command='settings', description='Settings'),
     ])
+    await bot.set_my_commands([
+        BotCommand(command='start', description='О боте'),
+        BotCommand(command='books', description='Учетные книги'),
+        BotCommand(command='today', description='Расходы за сегодня'),
+        BotCommand(command='yesterday', description='Расходы за вчера'),
+        BotCommand(command='current_month', description='Расходы за текущий месяц'),
+        BotCommand(command='settings', description='Настройки'),
+    ], language_code='ru')
     dp = Dispatcher()
     form_router = Router()
     start_handler = Start(db, dp, form_router)
