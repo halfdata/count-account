@@ -401,3 +401,63 @@ BUTTON_LANGUAGE = {
     'default': '✎ Language',
     'ru': '✎ Язык',
 }
+
+JANUARY = {
+    'default': 'January',
+    'ru': 'Январь',
+}
+
+FEBRUARY = {
+    'default': 'February',
+    'ru': 'Февраль',
+}
+
+MARCH = {
+    'default': 'March',
+    'ru': 'Март',
+}
+
+APRIL = {
+    'default': 'April',
+    'ru': 'Апрель',
+}
+
+MAY = {
+    'default': 'May',
+    'ru': 'Май',
+}
+
+JUNE = {
+    'default': 'June',
+    'ru': 'Июнь',
+}
+
+JULY = {
+    'default': 'July',
+    'ru': 'Июль',
+}
+
+AUGUST = {
+    'default': 'August',
+    'ru': 'Август',
+}
+
+SEPTEMBER = {
+    'default': 'September',
+    'ru': 'Сентябрь',
+}
+
+OCTOBER = {
+    'default': 'October',
+    'ru': 'Октябрь',
+}
+
+NOVEMBER = {
+    'default': 'November',
+    'ru': 'Ноябрь',
+}
+
+DECEMBER = {
+    'default': 'December',
+    'ru': 'Декабрь',
+}

@@ -312,6 +312,25 @@ class DB:
             expenses = connection.execute(statement).all()
         return expenses
 
+    def get_expenses_per_day(self, book_id: int, year: int, month: int):
+        """Returns expenses groupped by days within specified month."""
+        with self.engine.connect() as connection:
+            statement = (select(
+                    self.expense_table.c.day,
+                    func.sum(self.expense_table.c.amount).label('amount')
+                )
+                .select_from(self.expense_table)
+                .where(self.expense_table.c.book_id == book_id)
+                .where(self.expense_table.c.deleted == False)
+                .where(self.expense_table.c.month == month)
+                .where(self.expense_table.c.year == year)
+                .group_by(self.expense_table.c.day)
+                .order_by(asc('amount'))
+            )
+            expenses = connection.execute(statement).all()
+        return expenses
+
+
     def get_shared_books_by(self, *,
                             user_id: Optional[int] = None,
                             book_id: Optional[int] = None,

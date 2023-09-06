@@ -20,6 +20,7 @@ import matplotlib.pyplot as plt
 import messages
 import models
 from utils import __, DBUser
+from utils import MONTH_LABELS
 
 
 class Reports:
@@ -78,14 +79,29 @@ class Reports:
     ) -> None:
         """Expenses for the current month."""
         await state.clear()
+        from_user = from_user or message.from_user
+        dbuser = DBUser(self.db, from_user)
         ct = datetime.utcnow()
         _, last_day = calendar.monthrange(ct.year, ct.month)
+        period_label = '{month}, {year}'.format(
+            month=__(MONTH_LABELS[ct.month], dbuser.user_options['hl']),
+            year=ct.year
+        )
         await self.per_category_report(
             message,
             state,
             from_date=datetime.combine(date(ct.year, ct.month, 1), time.min),
             to_date=datetime.combine(date(ct.year, ct.month, last_day), time.max),
-            from_user=from_user
+            from_user=from_user,
+            period_label=period_label
+        )
+        await self.per_day_report(
+            message,
+            state,
+            year=ct.year,
+            month=ct.month,
+            from_user=from_user,
+            period_label=period_label
         )
 
     async def per_category_report(
@@ -94,7 +110,8 @@ class Reports:
         state: FSMContext,
         from_date: datetime,
         to_date: datetime,
-        from_user: Optional[User] = None
+        from_user: Optional[User] = None,
+        period_label: Optional[str] = None
     ) -> None:
         """Per category expenses."""
         from_user = from_user or message.from_user
@@ -134,7 +151,11 @@ class Reports:
             )
             return
         total_amount = sum(amounts)
-        period = (from_date_str if from_date_str == to_date_str else f'{from_date_str} ... {to_date_str}')
+        max_amount = max(amounts)
+        if period_label is None:
+            period = (from_date_str if from_date_str == to_date_str else f'{from_date_str} ... {to_date_str}')
+        else:
+            period = period_label
         fig, ax = plt.subplots()
         bars = ax.barh(categories, amounts, label=categories)
         fig.suptitle(
@@ -148,8 +169,81 @@ class Reports:
             )
         )
         ax.set_title(f'Total: {total_amount:.2f} {book.currency}', fontweight='bold')
-        ax.bar_label(bars, label_type='center', fmt='{:.2f}', color='lightgray')
+        low_values = [f'{v:.2f}' if v < 0.15 * max_amount else '' for v in amounts]
+        nonlow_values = [f'{v:.2f}' if v >= 0.15 * max_amount else '' for v in amounts]
+        ax.bar_label(bars, nonlow_values,
+                     label_type='center', color='white')
+        ax.bar_label(bars, low_values,
+                     label_type='edge', color='grey', padding=3)
         ax.set_xlabel(book.currency)
+        buffer = BytesIO()
+        plt.savefig(buffer, format='png', bbox_inches='tight')
+        buffer.seek(0)
+        image_png = buffer.getvalue()
+        buffer.close()
+        await message.answer_photo(
+            photo=BufferedInputFile(file=image_png, filename='report.png')
+        )
+
+    async def per_day_report(
+        self,
+        message: Message,
+        state: FSMContext,
+        year: int,
+        month: int,
+        from_user: Optional[User] = None,
+        period_label: Optional[str] = None
+    ) -> None:
+        """Per day expenses."""
+        from_user = from_user or message.from_user
+        dbuser = DBUser(self.db, from_user)
+        book = dbuser.active_book()
+        if not book:
+            await message.answer(
+                text=__(
+                    text_dict=messages.ACTIVE_BOOK_REQUIRED,
+                    lang=dbuser.user_options['hl']
+                ),
+            )
+            return
+        records = self.db.get_expenses_per_day(
+            book_id=book.id, year=year, month=month)
+        _, last_day = calendar.monthrange(year, month)
+        days = [day for day in range(1, last_day + 1)]
+        amounts = [0]*last_day
+        for record in records:
+            amounts[record.day-1] = record.amount
+
+        total_amount = sum(amounts)
+        max_amount = max(amounts)
+        if period_label is None:
+            period = f'{year}-{month}'
+        else:
+            period = period_label
+        fig, ax = plt.subplots()
+        bars = ax.bar(days, amounts, label=days, align='center')
+        fig.suptitle(
+            __(
+                text_dict=messages.REPORTS_BOOK_AND_PERIOD,
+                lang=dbuser.user_options['hl']
+            ).format(
+                book_title=book.title,
+                currency=book.currency,
+                period=period
+            )
+        )
+        ax.set_title(f'Total: {total_amount:.2f} {book.currency}', fontweight='bold')
+
+        low_values = [f'{v:.2f}' if v < 0.15 * max_amount else '' for v in amounts]
+        nonlow_values = [f'{v:.2f}' if v >= 0.15 * max_amount else '' for v in amounts]
+        ax.bar_label(bars, nonlow_values, size='8', color='white',
+                     label_type='center', rotation='vertical')
+        ax.bar_label(bars, low_values, size='8', color='gray',
+                     label_type='edge', rotation='vertical', padding=5)
+        ax.set_xlim(0.5, last_day + 0.5)
+        ax.set_ylabel(book.currency)
+        ax.set_xlabel(period)
+        plt.xticks(days, size='8')
         buffer = BytesIO()
         plt.savefig(buffer, format='png', bbox_inches='tight')
         buffer.seek(0)
