@@ -45,7 +45,7 @@ class Expenses:
             await message.answer(
                 text=__(
                     text_dict=messages.ACTIVE_BOOK_REQUIRED,
-                    lang=dbuser.user_options['hl']
+                    lang=message.from_user.language_code
                 ),
             )
             return
@@ -53,7 +53,7 @@ class Expenses:
             await message.answer(
                 text=__(
                     text_dict=messages.EXPENSES_ZERO_AMOUNT,
-                    lang=dbuser.user_options['hl']
+                    lang=message.from_user.language_code
                 ),
             )
             return
@@ -62,7 +62,7 @@ class Expenses:
         await message.answer(
             text=__(
                 text_dict=messages.EXPENSES_ADD_AMOUNT,
-                lang=dbuser.user_options['hl']
+                lang=message.from_user.language_code
             ).format(
                 amount='{:.2f}'.format(amount),
                 currency=book.currency,
@@ -85,7 +85,7 @@ class Expenses:
             await message.answer(
                 text=__(
                     text_dict=messages.ACTIVE_BOOK_REQUIRED,
-                    lang=dbuser.user_options['hl']
+                    lang=from_user.language_code
                 ),
             )
             return
@@ -116,23 +116,23 @@ class Expenses:
         if parent_category:
             button_groups.append([
                 InlineKeyboardButton(
-                    text=__(messages.BUTTON_SUBMIT, lang=dbuser.user_options['hl']),
+                    text=__(messages.BUTTON_SUBMIT, lang=from_user.language_code),
                     callback_data='/submit'
                 ),
-                back_button(dbuser.user_options['hl']),
+                back_button(from_user.language_code),
             ])
             keyboard_inline = InlineKeyboardMarkup(inline_keyboard=button_groups)
             await message.answer(
                 text=__(
                     text_dict=messages.EXPENSES_CATEGORY_SELECT_CATEGORY,
-                    lang=dbuser.user_options['hl']
+                    lang=from_user.language_code
                 ).format(category_title=parent_category.title),
                 reply_markup=keyboard_inline,
             )
         else:
             button_groups.append([
                 InlineKeyboardButton(
-                    text=__(messages.BUTTON_SUBMIT, lang=dbuser.user_options['hl']),
+                    text=__(messages.BUTTON_SUBMIT, lang=from_user.language_code),
                     callback_data='/submit'
                 ),
             ])
@@ -140,7 +140,7 @@ class Expenses:
             await message.answer(
                 text=__(
                     text_dict=messages.EXPENSES_ROOT_SELECT_CATEGORY,
-                    lang=dbuser.user_options['hl']
+                    lang=from_user.language_code
                 ),
                 reply_markup=keyboard_inline,
             )
@@ -153,7 +153,7 @@ class Expenses:
             await call.message.answer(
                 text=__(
                     text_dict=messages.ACTIVE_BOOK_REQUIRED,
-                    lang=dbuser.user_options['hl']
+                    lang=call.from_user.language_code
                 ),
             )
             return
@@ -182,7 +182,7 @@ class Expenses:
                 await call.message.answer(
                     text=__(
                         text_dict=messages.EXPENSES_SUCCESSFULLY_CREATED_IN_CATEGORY,
-                        lang=dbuser.user_options['hl']
+                        lang=call.from_user.language_code
                     ).format(
                         amount='{:.2f}'.format(amount),
                         currency=book.currency,
@@ -194,7 +194,7 @@ class Expenses:
                 await call.message.answer(
                     text=__(
                         text_dict=messages.EXPENSES_SUCCESSFULLY_CREATED,
-                        lang=dbuser.user_options['hl']
+                        lang=call.from_user.language_code
                     ).format(
                         amount='{:.2f}'.format(amount),
                         currency=book.currency,

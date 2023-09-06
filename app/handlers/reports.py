@@ -84,7 +84,7 @@ class Reports:
         ct = datetime.utcnow()
         _, last_day = calendar.monthrange(ct.year, ct.month)
         period_label = '{month}, {year}'.format(
-            month=__(MONTH_LABELS[ct.month], dbuser.user_options['hl']),
+            month=__(MONTH_LABELS[ct.month], from_user.language_code),
             year=ct.year
         )
         await self.per_category_report(
@@ -121,7 +121,7 @@ class Reports:
             await message.answer(
                 text=__(
                     text_dict=messages.ACTIVE_BOOK_REQUIRED,
-                    lang=dbuser.user_options['hl']
+                    lang=from_user.language_code
                 ),
             )
             return
@@ -146,7 +146,7 @@ class Reports:
             await message.answer(
                 text=__(
                     text_dict=messages.REPORTS_NO_DATA,
-                    lang=dbuser.user_options['hl']
+                    lang=from_user.language_code
                 ),
             )
             return
@@ -161,14 +161,14 @@ class Reports:
         fig.suptitle(
             __(
                 text_dict=messages.REPORTS_BOOK_AND_PERIOD,
-                lang=dbuser.user_options['hl']
+                lang=from_user.language_code
             ).format(
                 book_title=book.title,
                 currency=book.currency,
                 period=period
             )
         )
-        total_label = __(messages.TOTAL, lang=dbuser.user_options['hl'])
+        total_label = __(messages.TOTAL, lang=from_user.language_code)
         ax.set_title(f'{total_label}: {total_amount:.2f} {book.currency}', fontweight='bold')
         low_values = [f'{v:.2f}' if v < 0.15 * max_amount else '' for v in amounts]
         nonlow_values = [f'{v:.2f}' if v >= 0.15 * max_amount else '' for v in amounts]
@@ -203,7 +203,7 @@ class Reports:
             await message.answer(
                 text=__(
                     text_dict=messages.ACTIVE_BOOK_REQUIRED,
-                    lang=dbuser.user_options['hl']
+                    lang=from_user.language_code
                 ),
             )
             return
@@ -226,14 +226,14 @@ class Reports:
         fig.suptitle(
             __(
                 text_dict=messages.REPORTS_BOOK_AND_PERIOD,
-                lang=dbuser.user_options['hl']
+                lang=from_user.language_code
             ).format(
                 book_title=book.title,
                 currency=book.currency,
                 period=period
             )
         )
-        total_label = __(messages.TOTAL, lang=dbuser.user_options['hl'])
+        total_label = __(messages.TOTAL, lang=from_user.language_code)
         ax.set_title(f'{total_label}: {total_amount:.2f} {book.currency}', fontweight='bold')
 
         low_values = [f'{v:.2f}' if v < 0.15 * max_amount else '' for v in amounts]

@@ -50,7 +50,7 @@ class Settings:
         button_groups = [
             [
                 InlineKeyboardButton(
-                    text=__(messages.BUTTON_LANGUAGE, lang=dbuser.user_options['hl']),
+                    text=__(messages.BUTTON_LANGUAGE, lang=from_user.language_code),
                     callback_data='/language'
                 ),
             ]
@@ -59,8 +59,8 @@ class Settings:
         await message.answer(
             text=__(
                 text_dict=messages.SETTINGS_WELCOME,
-                lang=dbuser.user_options['hl']
-            ).format(language=LANGUAGES[dbuser.user_options['hl']]),
+                lang=from_user.language_code
+            ).format(language=LANGUAGES[from_user.language_code]),
             reply_markup=keyboard_inline,
         )
 
@@ -91,14 +91,14 @@ class Settings:
                 button_groups.append([])
             button_groups[-1].append(button)
         button_groups.append([
-            back_button(dbuser.user_options['hl']),
+            back_button(from_user.language_code),
         ])
         keyboard_inline = InlineKeyboardMarkup(inline_keyboard=button_groups)
         await message.answer(
             text=__(
                 text_dict=messages.SETTINGS_SELECT_LANGUAGE,
-                lang=dbuser.user_options['hl']
-            ).format(language=LANGUAGES[dbuser.user_options['hl']]),
+                lang=from_user.language_code
+            ).format(language=LANGUAGES[from_user.language_code]),
             reply_markup=keyboard_inline,
         )
 
@@ -110,8 +110,8 @@ class Settings:
             await call.message.answer(
                 text=__(
                     text_dict=messages.SETTINGS_LANGUAGE_UPDATED,
-                    lang=dbuser.user_options['hl']
-                ).format(language=LANGUAGES[dbuser.user_options['hl']]),
+                    lang=call.from_user.language_code
+                ).format(language=LANGUAGES[call.from_user.language_code]),
             )
             await self.settings(call.message, state, call.from_user)
             return

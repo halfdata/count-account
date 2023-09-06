@@ -102,7 +102,7 @@ class Books:
             button_groups[-1].append(button)
         button_groups.append([
             InlineKeyboardButton(
-                text=__(messages.BUTTON_ADD_BOOK, lang=dbuser.user_options['hl']),
+                text=__(messages.BUTTON_ADD_BOOK, lang=from_user.language_code),
                 callback_data='/new'
             )
         ])
@@ -110,7 +110,7 @@ class Books:
         await message.answer(
             text=__(
                 text_dict=messages.BOOKS_WELCOME,
-                lang=dbuser.user_options['hl']
+                lang=from_user.language_code
             ),
             reply_markup=keyboard_inline,
         )
@@ -152,21 +152,21 @@ class Books:
         button_groups = [
             [
                 InlineKeyboardButton(
-                    text=__(messages.BUTTON_JOIN, lang=dbuser.user_options['hl']),
+                    text=__(messages.BUTTON_JOIN, lang=from_user.language_code),
                     callback_data='/join'
                 ),
                 InlineKeyboardButton(
-                    text=__(messages.BUTTON_DISCONNECT, lang=dbuser.user_options['hl']),
+                    text=__(messages.BUTTON_DISCONNECT, lang=from_user.language_code),
                     callback_data='/disconnect'
                 ),
-                back_button(dbuser.user_options['hl']),
+                back_button(from_user.language_code),
             ],
         ]
         keyboard_inline = InlineKeyboardMarkup(inline_keyboard=button_groups)
         await message.answer(
             text=__(
                 text_dict=messages.BOOKS_SELECTED,
-                lang=dbuser.user_options['hl']
+                lang=from_user.language_code
             ).format(
                 title=shared_book.title,
                 currency=shared_book.currency,
@@ -199,7 +199,7 @@ class Books:
             await call.message.answer(
                 text=__(
                     text_dict=messages.BOOKS_CONNECTED,
-                    lang=dbuser.user_options['hl']
+                    lang=call.from_user.language_code
                 ).format(
                     title=shared_book.title,
                     currency=shared_book.currency
@@ -215,7 +215,7 @@ class Books:
             await call.message.answer(
                 text=__(
                     text_dict=messages.BOOKS_DISCONNECTED,
-                    lang=dbuser.user_options['hl']
+                    lang=call.from_user.language_code
                 ).format(
                     title=shared_book.title,
                     currency=shared_book.currency
@@ -247,37 +247,37 @@ class Books:
         button_groups = [
             [
                 InlineKeyboardButton(
-                    text=__(messages.BUTTON_TITLE, lang=dbuser.user_options['hl']),
+                    text=__(messages.BUTTON_TITLE, lang=from_user.language_code),
                     callback_data='/update_title'
                 ),
                 InlineKeyboardButton(
-                    text=__(messages.BUTTON_CURRENCY, lang=dbuser.user_options['hl']),
+                    text=__(messages.BUTTON_CURRENCY, lang=from_user.language_code),
                     callback_data='/update_currency'
                 ),
                 InlineKeyboardButton(
-                    text=__(messages.BUTTON_CATEGORIES, lang=dbuser.user_options['hl']),
+                    text=__(messages.BUTTON_CATEGORIES, lang=from_user.language_code),
                     callback_data='/update_categories'
                 ),
             ],
             [
                 InlineKeyboardButton(
-                    text=__(messages.BUTTON_JOIN, lang=dbuser.user_options['hl']),
+                    text=__(messages.BUTTON_JOIN, lang=from_user.language_code),
                     callback_data='/join'
                 ),
                 InlineKeyboardButton(
-                    text=__(messages.BUTTON_REMOVE, lang=dbuser.user_options['hl']),
+                    text=__(messages.BUTTON_REMOVE, lang=from_user.language_code),
                     callback_data='/delete'
                 ),
             ],
             [
-                back_button(dbuser.user_options['hl']),
+                back_button(from_user.language_code),
             ]
         ]
         keyboard_inline = InlineKeyboardMarkup(inline_keyboard=button_groups)
         await message.answer(
             text=__(
                 text_dict=messages.BOOKS_SELECTED,
-                lang=dbuser.user_options['hl']
+                lang=from_user.language_code
             ).format(title=book.title, currency=book.currency, book_uid=book.book_uid),
             reply_markup=keyboard_inline,
         )
@@ -314,7 +314,7 @@ class Books:
             await call.message.answer(
                 text=__(
                     text_dict=messages.BOOKS_CONNECTED,
-                    lang=dbuser.user_options['hl']
+                    lang=call.from_user.language_code
                 ).format(title=book.title, currency=book.currency),
             )
             return
@@ -327,7 +327,7 @@ class Books:
             await call.message.answer(
                 text=__(
                     text_dict=messages.BOOKS_DELETED,
-                    lang=dbuser.user_options['hl']
+                    lang=call.from_user.language_code
                 ).format(title=book.title, currency=book.currency),
             )
             await self.books(call.message, state, call.from_user)
@@ -346,7 +346,7 @@ class Books:
         await message.answer(
             text=__(
                 text_dict=messages.BOOKS_ADD_TITLE,
-                lang=dbuser.user_options['hl']
+                lang=from_user.language_code
             ),
         )
 
@@ -357,7 +357,7 @@ class Books:
             await message.answer(
                 text=__(
                     text_dict=messages.BOOKS_TITLE_TOO_LONG,
-                    lang=dbuser.user_options['hl']
+                    lang=message.from_user.language_code
                 ),
             )
             return
@@ -365,7 +365,7 @@ class Books:
             await message.answer(
                 text=__(
                     text_dict=messages.BOOKS_TITLE_TOO_SHORT,
-                    lang=dbuser.user_options['hl']
+                    lang=message.from_user.language_code
                 ),
             )
             return
@@ -373,7 +373,7 @@ class Books:
             await message.answer(
                 text=__(
                     text_dict=messages.BOOKS_TITLE_AVOID_SLASH,
-                    lang=dbuser.user_options['hl']
+                    lang=message.from_user.language_code
                 ),
             )
             return
@@ -386,7 +386,7 @@ class Books:
             await message.answer(
                 text=__(
                     text_dict=messages.BOOKS_ALREADY_EXISTS,
-                    lang=dbuser.user_options['hl']
+                    lang=message.from_user.language_code
                 ),
             )
             return
@@ -408,7 +408,7 @@ class Books:
         await message.answer(
             text=__(
                 text_dict=messages.BOOKS_TITLE_UPDATED,
-                lang=dbuser.user_options['hl']
+                lang=message.from_user.language_code
             ),
         )
         await self.actions(message, state, message.from_user)
@@ -437,7 +437,7 @@ class Books:
         await message.answer(
             text=__(
                 text_dict=messages.BOOKS_SET_CURRENCY,
-                lang=dbuser.user_options['hl']
+                lang=from_user.language_code
             ),
             reply_markup=keyboard_inline,
         )
@@ -450,7 +450,7 @@ class Books:
             await call.message.answer(
                 text=__(
                     text_dict=messages.BOOKS_CURRENCY_invalid_request,
-                    lang=dbuser.user_options['hl']
+                    lang=call.from_user.language_code
                 ),
             )
             return
@@ -467,7 +467,7 @@ class Books:
             await call.message.answer(
                 text=__(
                     text_dict=messages.BOOKS_SUCCESSFULLY_CREATED,
-                    lang=dbuser.user_options['hl']
+                    lang=call.from_user.language_code
                 ).format(title=data['title'], currency=data['currency'], book_uid=book_ids['book_uid']),
             )
             await self.books(call.message, state, call.from_user)
@@ -485,7 +485,7 @@ class Books:
         await call.message.answer(
             text=__(
                 text_dict=messages.BOOKS_CURRENCY_UPDATED,
-                lang=dbuser.user_options['hl']
+                lang=call.from_user.language_code
             ),
         )
         await self.actions(call.message, state, call.from_user)
@@ -544,27 +544,27 @@ class Books:
         if parent_category:
             button_groups.append([
                 InlineKeyboardButton(
-                    text=__(messages.BUTTON_TITLE, lang=dbuser.user_options['hl']),
+                    text=__(messages.BUTTON_TITLE, lang=from_user.language_code),
                     callback_data='/update_title'
                 ),
                 InlineKeyboardButton(
-                    text=__(messages.BUTTON_REMOVE, lang=dbuser.user_options['hl']),
+                    text=__(messages.BUTTON_REMOVE, lang=from_user.language_code),
                     callback_data='/delete'
                 ),
             ])
         button_groups.append([
             InlineKeyboardButton(
-                text=__(messages.BUTTON_ADD_CATEGORY, lang=dbuser.user_options['hl']),
+                text=__(messages.BUTTON_ADD_CATEGORY, lang=from_user.language_code),
                 callback_data='/new'
             ),
-            back_button(dbuser.user_options['hl'])
+            back_button(from_user.language_code)
         ])
         keyboard_inline = InlineKeyboardMarkup(inline_keyboard=button_groups)
         if not parent_category:
             await message.answer(
                 text=__(
                     text_dict=messages.CATEGORIES_WELCOME,
-                    lang=dbuser.user_options['hl']
+                    lang=from_user.language_code
                 ),
                 reply_markup=keyboard_inline,
             )
@@ -572,7 +572,7 @@ class Books:
             await message.answer(
                 text=__(
                     text_dict=messages.CATEGORIES_WELCOME_TO_CATEGORY,
-                    lang=dbuser.user_options['hl']
+                    lang=from_user.language_code
                 ).format(title=parent_category.title),
                 reply_markup=keyboard_inline,
             )
@@ -618,7 +618,7 @@ class Books:
                 await call.message.answer(
                     text=__(
                         text_dict=messages.CATEGORIES_DELETED,
-                        lang=dbuser.user_options['hl']
+                        lang=call.from_user.language_code
                     ).format(title=category.title),
                 )
             else:
@@ -665,7 +665,7 @@ class Books:
         await message.answer(
             text=__(
                 text_dict=messages.CATEGORIES_ADD_TITLE,
-                lang=dbuser.user_options['hl']
+                lang=from_user.language_code
             ),
         )
 
@@ -686,7 +686,7 @@ class Books:
             await message.answer(
                 text=__(
                     text_dict=messages.CATEGORIES_TITLE_TOO_LONG,
-                    lang=dbuser.user_options['hl']
+                    lang=message.from_user.language_code
                 ),
             )
             return
@@ -694,7 +694,7 @@ class Books:
             await message.answer(
                 text=__(
                     text_dict=messages.CATEGORIES_TITLE_TOO_SHORT,
-                    lang=dbuser.user_options['hl']
+                    lang=message.from_user.language_code
                 ),
             )
             return
@@ -702,7 +702,7 @@ class Books:
             await message.answer(
                 text=__(
                     text_dict=messages.CATEGORIES_TITLE_AVOID_SLASH,
-                    lang=dbuser.user_options['hl']
+                    lang=message.from_user.language_code
                 ),
             )
             return
@@ -723,7 +723,7 @@ class Books:
             await message.answer(
                 text=__(
                     text_dict=messages.CATEGORIES_ALREADY_EXISTS,
-                    lang=dbuser.user_options['hl']
+                    lang=message.from_user.language_code
                 ).format(title=title),
             )
             return
@@ -737,7 +737,7 @@ class Books:
             await message.answer(
                 text=__(
                     text_dict=messages.CATEGORIES_SUCCESSFULLY_CREATED,
-                    lang=dbuser.user_options['hl']
+                    lang=message.from_user.language_code
                 ).format(title=title),
             )
             await self._categories(message, state, message.from_user)
@@ -755,7 +755,7 @@ class Books:
         await message.answer(
             text=__(
                 text_dict=messages.CATEGORIES_TITLE_UPDATED,
-                lang=dbuser.user_options['hl']
+                lang=message.from_user.language_code
             ),
         )
         await self._categories(message, state, message.from_user)
@@ -790,7 +790,7 @@ class Books:
                 await message.answer(
                     text=__(
                         text_dict=messages.BOOKS_DISABLED,
-                        lang=dbuser.user_options['hl']
+                        lang=message.from_user.language_code
                     ).format(title=book.title, currency=book.currency),
                 )
                 return
@@ -798,7 +798,7 @@ class Books:
         await message.answer(
             text=__(
                 text_dict=messages.BOOKS_CONNECTED,
-                lang=dbuser.user_options['hl']
+                lang=message.from_user.language_code
             ).format(title=book.title, currency=book.currency),
         )
         return

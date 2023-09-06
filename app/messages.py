@@ -3,9 +3,7 @@ START = {
         'Welcome to Count Account, the Telegram bot that helps you to track '
         'expenses. Create the book or join existing one and drop your '
         'expenses into appropriate categories. Analyze daily and monthly '
-        'reports.\n\n'
-        'Set desired language, you can always change it via '
-        '<strong>Settings</strong> menu.'
+        'reports.'
     ),
     'ru': (
         'Добро пожаловать в телеграм бот Count Account! Теперь вы можете легко '
@@ -13,9 +11,7 @@ START = {
         'вместе с партнёром, супругом/супругой, взрослыми детьми! Создайте '
         'свою книгу учёта или присоединитесь к уже созданной. После чего '
         'сохраняйте свои затраты в подходящей категории и анализируйте расходы '
-        'ежедневно или ежемесячно.\n\n'
-        'Установите желаемый язык интерфейса ниже. Вы всегда можете изменить '
-        'его через меню <strong>Настройки</strong>.'
+        'ежедневно или ежемесячно.'
     ),
 }
 
