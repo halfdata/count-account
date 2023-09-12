@@ -23,6 +23,13 @@ from utils import __, DBUser
 from utils import MONTH_LABELS
 
 
+class MonthReportState(StatesGroup):
+    report_type = State()
+    year = State()
+    month = State()
+    day = State()
+
+
 class Reports:
     """Handlers for reports workflow."""
     db: models.DB
@@ -32,6 +39,11 @@ class Reports:
         dp.message.register(self.today, Command('today'))
         dp.message.register(self.yesterday, Command('yesterday'))
         dp.message.register(self.current_month, Command('current_month'))
+        dp.message.register(self.month, Command('month'))
+        dp.message.register(self.day, Command('day'))
+        router.callback_query.register(self.selector_year_callback, MonthReportState.year)
+        router.callback_query.register(self.selector_month_callback, MonthReportState.month)
+        router.callback_query.register(self.selector_day_callback, MonthReportState.day)
 
     async def _invalid_request(self, message: Message, state: FSMContext) -> None:
         await state.clear()
@@ -45,13 +57,14 @@ class Reports:
     ) -> None:
         """Today's expenses."""
         await state.clear()
-        current_time = datetime.utcnow()
+        ct = datetime.utcnow()
         await self.per_category_report(
             message,
             state,
-            from_date=datetime.combine(current_time, time.min),
-            to_date=datetime.combine(current_time, time.max),
-            from_user=from_user
+            from_user=from_user,
+            year=ct.year,
+            month=ct.month,
+            day=ct.day
         )
 
     async def yesterday(
@@ -62,13 +75,14 @@ class Reports:
     ) -> None:
         """Yesterday's expenses."""
         await state.clear()
-        yesterday_time = datetime.utcnow() - timedelta(days=1)
+        ct = datetime.utcnow() - timedelta(days=1)
         await self.per_category_report(
             message,
             state,
-            from_date=datetime.combine(yesterday_time, time.min),
-            to_date=datetime.combine(yesterday_time, time.max),
-            from_user=from_user
+            from_user=from_user,
+            year=ct.year,
+            month=ct.month,
+            day=ct.day
         )
 
     async def current_month(
@@ -80,38 +94,295 @@ class Reports:
         """Expenses for the current month."""
         await state.clear()
         from_user = from_user or message.from_user
-        dbuser = DBUser(self.db, from_user)
         ct = datetime.utcnow()
-        _, last_day = calendar.monthrange(ct.year, ct.month)
-        period_label = '{month}, {year}'.format(
-            month=__(MONTH_LABELS[ct.month], from_user.language_code),
-            year=ct.year
-        )
         await self.per_category_report(
             message,
             state,
-            from_date=datetime.combine(date(ct.year, ct.month, 1), time.min),
-            to_date=datetime.combine(date(ct.year, ct.month, last_day), time.max),
             from_user=from_user,
-            period_label=period_label
+            year=ct.year,
+            month=ct.month
         )
         await self.per_day_report(
             message,
             state,
-            year=ct.year,
-            month=ct.month,
             from_user=from_user,
-            period_label=period_label
+            year=ct.year,
+            month=ct.month
         )
+
+    async def month(
+        self,
+        message: Message,
+        state: FSMContext,
+        from_user: Optional[User] = None
+    ) -> None:
+        """Expenses for the specified month."""
+        await state.clear()
+        from_user = from_user or message.from_user
+        await state.update_data(report_type='month')
+        await self.selector_year(message, state, from_user)
+
+    async def day(
+        self,
+        message: Message,
+        state: FSMContext,
+        from_user: Optional[User] = None
+    ) -> None:
+        """Expenses for the specified day."""
+        await state.clear()
+        from_user = from_user or message.from_user
+        await state.update_data(report_type='day')
+        await self.selector_year(message, state, from_user)
+
+    async def selector_year(
+        self,
+        message: Message,
+        state: FSMContext,
+        from_user: Optional[User] = None
+    ) -> None:
+        """Expenses."""
+        from_user = from_user or message.from_user
+        dbuser = DBUser(self.db, from_user)
+        book = dbuser.active_book()
+        if not book:
+            await message.answer(
+                text=__(
+                    text_dict=messages.ACTIVE_BOOK_REQUIRED,
+                    lang=from_user.language_code
+                ),
+            )
+            return
+        records = self.db.get_expenses_per_year(book.id)
+        if not records:
+            await message.answer(
+                text=__(
+                    text_dict=messages.REPORTS_NO_DATA,
+                    lang=from_user.language_code
+                ),
+            )
+            return
+        if len(records) == 1:
+            await state.update_data(year=records[0].year)
+            await self.selector_month(message, state, from_user)
+            return
+        await state.set_state(MonthReportState.year)
+        button_groups = []
+        buttons = []
+        for record in records:
+            buttons.append(
+                InlineKeyboardButton(text=f'{record.year}', callback_data=f'{record.year}')
+            )
+        for button in buttons:
+            if len(button_groups) < 1 or len(button_groups[-1]) > 3:
+                button_groups.append([])
+            button_groups[-1].append(button)
+        keyboard_inline = InlineKeyboardMarkup(inline_keyboard=button_groups)
+        await message.answer(
+            text=__(
+                text_dict=messages.REPORTS_SELECT_YEAR,
+                lang=from_user.language_code
+            ),
+            reply_markup=keyboard_inline,
+        )
+
+    async def selector_year_callback(self, call: CallbackQuery, state: FSMContext) -> None:
+        await call.message.edit_reply_markup(reply_markup=None)
+        year = int(call.data)
+        await state.update_data(year=year)
+        await self.selector_month(call.message, state, call.from_user)
+
+    async def selector_month(
+        self,
+        message: Message,
+        state: FSMContext,
+        from_user: Optional[User] = None
+    ) -> None:
+        """Expenses."""
+        from_user = from_user or message.from_user
+        dbuser = DBUser(self.db, from_user)
+        book = dbuser.active_book()
+        if not book:
+            await message.answer(
+                text=__(
+                    text_dict=messages.ACTIVE_BOOK_REQUIRED,
+                    lang=from_user.language_code
+                ),
+            )
+            return
+        data = await state.get_data()
+        year = int(data['year'])
+        records = self.db.get_expenses_per_month(book.id, year)
+        if not records:
+            await message.answer(
+                text=__(
+                    text_dict=messages.REPORTS_NO_DATA,
+                    lang=from_user.language_code
+                ),
+            )
+            return
+        if len(records) == 1:
+            await state.update_data(month=records[0].month)
+            if data['report_type'] == 'month':
+                await self._month(message, state, from_user)
+            elif data['report_type'] == 'day':
+                await self.selector_day(message, state, from_user)
+            else:
+                self._invalid_request(message, state)
+            return
+        await state.set_state(MonthReportState.month)
+        button_groups = []
+        buttons = []
+        for record in records:
+            buttons.append(
+                InlineKeyboardButton(
+                    text=__(MONTH_LABELS[record.month], from_user.language_code),
+                    callback_data=f'{record.month}'
+                )
+            )
+        for button in buttons:
+            if len(button_groups) < 1 or len(button_groups[-1]) > 3:
+                button_groups.append([])
+            button_groups[-1].append(button)
+        keyboard_inline = InlineKeyboardMarkup(inline_keyboard=button_groups)
+        await message.answer(
+            text=__(
+                text_dict=messages.REPORTS_SELECT_MONTH,
+                lang=from_user.language_code
+            ).format(year=year),
+            reply_markup=keyboard_inline,
+        )
+
+    async def selector_month_callback(self, call: CallbackQuery, state: FSMContext) -> None:
+        await call.message.edit_reply_markup(reply_markup=None)
+        month = int(call.data)
+        if month < 1 or month > 12:
+            self._invalid_request(call.message, state)
+            return
+        await state.update_data(month=month)
+        data = await state.get_data()
+        if data['report_type'] == 'month':
+            await self._month(call.message, state, call.from_user)
+            return
+        elif data['report_type'] == 'day':
+            await self.selector_day(call.message, state, call.from_user)
+            return
+        else:
+            self._invalid_request(call.message, state)
+            return
+
+    async def _month(
+        self,
+        message: Message,
+        state: FSMContext,
+        from_user: Optional[User] = None
+    ) -> None:
+        """Expenses."""
+        data = await state.get_data()
+        await state.clear()
+        await self.per_category_report(
+            message,
+            state,
+            from_user=from_user,
+            year=data['year'],
+            month=data['month']
+        )
+        await self.per_day_report(
+            message,
+            state,
+            from_user=from_user,
+            year=data['year'],
+            month=data['month']
+        )
+
+    async def selector_day(
+        self,
+        message: Message,
+        state: FSMContext,
+        from_user: Optional[User] = None
+    ) -> None:
+        """Expenses."""
+        from_user = from_user or message.from_user
+        dbuser = DBUser(self.db, from_user)
+        book = dbuser.active_book()
+        if not book:
+            await message.answer(
+                text=__(
+                    text_dict=messages.ACTIVE_BOOK_REQUIRED,
+                    lang=from_user.language_code
+                ),
+            )
+            return
+        data = await state.get_data()
+        year = int(data['year'])
+        month = int(data['month'])
+        records = self.db.get_expenses_per_day(book.id, year, month)
+        if not records:
+            await message.answer(
+                text=__(
+                    text_dict=messages.REPORTS_NO_DATA,
+                    lang=from_user.language_code
+                ),
+            )
+            return
+        if len(records) == 1:
+            await state.update_data(day=records[0].day)
+            await self._day(message, state, from_user)
+            return
+        await state.set_state(MonthReportState.day)
+        button_groups = []
+        buttons = []
+        for record in records:
+            buttons.append(
+                InlineKeyboardButton(
+                    text=f'{record.day}',
+                    callback_data=f'{record.day}'
+                )
+            )
+        for button in buttons:
+            if len(button_groups) < 1 or len(button_groups[-1]) > 5:
+                button_groups.append([])
+            button_groups[-1].append(button)
+        keyboard_inline = InlineKeyboardMarkup(inline_keyboard=button_groups)
+        await message.answer(
+            text=__(
+                text_dict=messages.REPORTS_SELECT_DAY,
+                lang=from_user.language_code
+            ).format(year=year, month=__(MONTH_LABELS[month], from_user.language_code)),
+            reply_markup=keyboard_inline,
+        )
+
+    async def _day(
+        self,
+        message: Message,
+        state: FSMContext,
+        from_user: Optional[User] = None
+    ) -> None:
+        """Expenses."""
+        data = await state.get_data()
+        await state.clear()
+        await self.per_category_report(
+            message,
+            state,
+            from_user=from_user,
+            year=data['year'],
+            month=data['month'],
+            day=data['day']
+        )
+
+    async def selector_day_callback(self, call: CallbackQuery, state: FSMContext) -> None:
+        await call.message.edit_reply_markup(reply_markup=None)
+        day = int(call.data)
+        await state.update_data(day=day)
+        await self._day(call.message, state, call.from_user)
 
     async def per_category_report(
         self,
         message: Message,
         state: FSMContext,
-        from_date: datetime,
-        to_date: datetime,
         from_user: Optional[User] = None,
-        period_label: Optional[str] = None
+        year: Optional[int] = None,
+        month: Optional[int] = None,
+        day: Optional[int] = None
     ) -> None:
         """Per category expenses."""
         from_user = from_user or message.from_user
@@ -125,14 +396,24 @@ class Reports:
                 ),
             )
             return
+        if year is not None and month is not None and day is not None:
+            period = f'{year}-{month:02}-{day:02}'
+        elif year is not None and month is not None:
+            period = '{month}, {year}'.format(
+                month=__(MONTH_LABELS[month], from_user.language_code),
+                year=year
+            )
+        elif year is not None:
+            period = f'{year}'
+        else:
+            self._invalid_request(message, state)
+            return
         records = self.db.get_expenses_per_category(
             book_id=book.id,
-            from_date=from_date,
-            to_date=to_date
+            year=year,
+            month=month,
+            day=day
         )
-        from_date_str = f'{from_date.year}-{from_date.month:02}-{from_date.day:02}'
-        to_date_str = f'{to_date.year}-{to_date.month:02}-{to_date.day:02}'
- 
         categories = []
         amounts = []
         for record in records:
@@ -152,10 +433,7 @@ class Reports:
             return
         total_amount = sum(amounts)
         max_amount = max(amounts)
-        if period_label is None:
-            period = (from_date_str if from_date_str == to_date_str else f'{from_date_str} ... {to_date_str}')
-        else:
-            period = period_label
+
         fig, ax = plt.subplots()
         bars = ax.barh(categories, amounts, label=categories)
         fig.suptitle(
@@ -190,10 +468,9 @@ class Reports:
         self,
         message: Message,
         state: FSMContext,
+        from_user: User,
         year: int,
-        month: int,
-        from_user: Optional[User] = None,
-        period_label: Optional[str] = None
+        month: int
     ) -> None:
         """Per day expenses."""
         from_user = from_user or message.from_user
@@ -217,10 +494,10 @@ class Reports:
 
         total_amount = sum(amounts)
         max_amount = max(amounts)
-        if period_label is None:
-            period = f'{year}-{month}'
-        else:
-            period = period_label
+        period = '{month}, {year}'.format(
+            month=__(MONTH_LABELS[month], from_user.language_code),
+            year=year
+        )
         fig, ax = plt.subplots()
         bars = ax.bar(days, amounts, label=days, align='center')
         fig.suptitle(

@@ -289,7 +289,13 @@ class DB:
             connection.commit()
         return expense_id
 
-    def get_expenses_per_category(self, book_id: int, from_date: DateTime, to_date: DateTime):
+    def get_expenses_per_category(
+        self, *,
+        book_id: int,
+        year: Optional[int] = None,
+        month: Optional[int] = None,
+        day: Optional[int] = None
+    ):
         """Returns expenses groupped by categories within specified dates."""
         with self.engine.connect() as connection:
             statement = (select(
@@ -304,11 +310,15 @@ class DB:
                 )
                 .where(self.expense_table.c.book_id == book_id)
                 .where(self.expense_table.c.deleted == False)
-                .where(self.expense_table.c.created >= from_date)
-                .where(self.expense_table.c.created <= to_date)
                 .group_by(self.expense_table.c.category_id)
                 .order_by(asc('amount'))
             )
+            if year is not None:
+                statement = statement.where(self.expense_table.c.year == year)
+            if month is not None:
+                statement = statement.where(self.expense_table.c.month == month)
+            if day is not None:
+                statement = statement.where(self.expense_table.c.day == day)
             expenses = connection.execute(statement).all()
         return expenses
 
@@ -325,11 +335,43 @@ class DB:
                 .where(self.expense_table.c.month == month)
                 .where(self.expense_table.c.year == year)
                 .group_by(self.expense_table.c.day)
-                .order_by(asc('amount'))
+                .order_by(self.expense_table.c.day.asc())
             )
             expenses = connection.execute(statement).all()
         return expenses
 
+    def get_expenses_per_year(self, book_id: int):
+        """Returns expenses groupped by years within specified book."""
+        with self.engine.connect() as connection:
+            statement = (select(
+                    self.expense_table.c.year,
+                    func.sum(self.expense_table.c.amount).label('amount')
+                )
+                .select_from(self.expense_table)
+                .where(self.expense_table.c.book_id == book_id)
+                .where(self.expense_table.c.deleted == False)
+                .group_by(self.expense_table.c.year)
+                .order_by(self.expense_table.c.year.asc())
+            )
+            expenses = connection.execute(statement).all()
+        return expenses
+
+    def get_expenses_per_month(self, book_id: int, year: int):
+        """Returns expenses groupped by month within specified year and book."""
+        with self.engine.connect() as connection:
+            statement = (select(
+                    self.expense_table.c.month,
+                    func.sum(self.expense_table.c.amount).label('amount')
+                )
+                .select_from(self.expense_table)
+                .where(self.expense_table.c.book_id == book_id)
+                .where(self.expense_table.c.year == year)
+                .where(self.expense_table.c.deleted == False)
+                .group_by(self.expense_table.c.month)
+                .order_by(self.expense_table.c.month.asc())
+            )
+            expenses = connection.execute(statement).all()
+        return expenses
 
     def get_shared_books_by(self, *,
                             user_id: Optional[int] = None,

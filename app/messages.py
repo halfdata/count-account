@@ -301,6 +301,21 @@ REPORTS_BOOK_AND_PERIOD = {
     'ru': '{book_title} ({currency}), {period}',
 }
 
+REPORTS_SELECT_YEAR = {
+    'default': 'Please select the year.',
+    'ru': 'Пожалуйста, выберите год.',
+}
+
+REPORTS_SELECT_MONTH = {
+    'default': 'Please select the month of {year} year.',
+    'ru': 'Пожалуйста, выберите месяц {year} года.',
+}
+
+REPORTS_SELECT_DAY = {
+    'default': 'Please select the day of {month}, {year}.',
+    'ru': 'Пожалуйста, выберите день {month}, {year}.',
+}
+
 REPORTS_NO_DATA = {
     'default': 'No data for requested period.',
     'ru': 'Данные за выбраный период отсутствуют.',

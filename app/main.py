@@ -11,7 +11,6 @@ import models
 from handlers.books import Books
 from handlers.expenses import Expenses
 from handlers.reports import Reports
-# from handlers.settings import Settings
 from handlers.start import Start
 
 DB_PATH = getenv('DB_PATH', '../db')
@@ -30,21 +29,22 @@ async def main():
         BotCommand(command='books', description='Manage books'),
         BotCommand(command='today', description='Today\'s expenses'),
         BotCommand(command='yesterday', description='Yesterday\'s expenses'),
+        BotCommand(command='day', description='Expenses for the day'),
         BotCommand(command='current_month', description='Expenses for the current month'),
-        # BotCommand(command='settings', description='Settings'),
+        BotCommand(command='month', description='Expenses for the month'),
     ])
     await bot.set_my_commands([
         BotCommand(command='start', description='О боте'),
         BotCommand(command='books', description='Учетные книги'),
         BotCommand(command='today', description='Расходы за сегодня'),
         BotCommand(command='yesterday', description='Расходы за вчера'),
+        BotCommand(command='day', description='Расходы за день'),
         BotCommand(command='current_month', description='Расходы за текущий месяц'),
-        # BotCommand(command='settings', description='Настройки'),
+        BotCommand(command='month', description='Расходы за месяц'),
     ], language_code='ru')
     dp = Dispatcher()
     form_router = Router()
     start_handler = Start(db, dp, form_router)
-    # settings_handler = Settings(db, dp, form_router)
     books_handler = Books(db, dp, form_router)
     reports_handler = Reports(db, dp, form_router)
     expenses_handler = Expenses(db, dp, form_router)
