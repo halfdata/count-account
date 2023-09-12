@@ -39,6 +39,7 @@ class Reports:
         dp.message.register(self.today, Command('today'))
         dp.message.register(self.yesterday, Command('yesterday'))
         dp.message.register(self.current_month, Command('current_month'))
+        dp.message.register(self.year, Command('year'))
         dp.message.register(self.month, Command('month'))
         dp.message.register(self.day, Command('day'))
         router.callback_query.register(self.selector_year_callback, MonthReportState.year)
@@ -110,6 +111,18 @@ class Reports:
             month=ct.month
         )
 
+    async def year(
+        self,
+        message: Message,
+        state: FSMContext,
+        from_user: Optional[User] = None
+    ) -> None:
+        """Expenses for the specified year."""
+        await state.clear()
+        from_user = from_user or message.from_user
+        await state.update_data(report_type='year')
+        await self.selector_year(message, state, from_user)
+
     async def month(
         self,
         message: Message,
@@ -161,9 +174,15 @@ class Reports:
                 ),
             )
             return
+        data = await state.get_data()
         if len(records) == 1:
             await state.update_data(year=records[0].year)
-            await self.selector_month(message, state, from_user)
+            if data['report_type'] == 'year':
+                await self._year(message, state, from_user)
+            elif data['report_type'] in ('month', 'day'):
+                await self.selector_month(message, state, from_user)
+            else:
+                self._invalid_request(message, state)
             return
         await state.set_state(MonthReportState.year)
         button_groups = []
@@ -189,7 +208,38 @@ class Reports:
         await call.message.edit_reply_markup(reply_markup=None)
         year = int(call.data)
         await state.update_data(year=year)
-        await self.selector_month(call.message, state, call.from_user)
+        data = await state.get_data()
+        if data['report_type'] == 'year':
+            await self._year(call.message, state, call.from_user)
+            return
+        elif data['report_type'] in ('month', 'day'):
+            await self.selector_month(call.message, state, call.from_user)
+            return
+        else:
+            self._invalid_request(call.message, state)
+            return
+
+    async def _year(
+        self,
+        message: Message,
+        state: FSMContext,
+        from_user: Optional[User] = None
+    ) -> None:
+        """Expenses."""
+        data = await state.get_data()
+        await state.clear()
+        await self.per_category_report(
+            message,
+            state,
+            from_user=from_user,
+            year=data['year']
+        )
+        await self.per_month_report(
+            message,
+            state,
+            from_user=from_user,
+            year=data['year']
+        )
 
     async def selector_month(
         self,
@@ -523,6 +573,69 @@ class Reports:
         ax.set_ylabel(book.currency)
         ax.set_xlabel(period)
         plt.xticks(days, size='8')
+        buffer = BytesIO()
+        plt.savefig(buffer, format='png', bbox_inches='tight')
+        buffer.seek(0)
+        image_png = buffer.getvalue()
+        buffer.close()
+        await message.answer_photo(
+            photo=BufferedInputFile(file=image_png, filename='report.png')
+        )
+
+    async def per_month_report(
+        self,
+        message: Message,
+        state: FSMContext,
+        from_user: User,
+        year: int
+    ) -> None:
+        """Per day expenses."""
+        from_user = from_user or message.from_user
+        dbuser = DBUser(self.db, from_user)
+        book = dbuser.active_book()
+        if not book:
+            await message.answer(
+                text=__(
+                    text_dict=messages.ACTIVE_BOOK_REQUIRED,
+                    lang=from_user.language_code
+                ),
+            )
+            return
+        records = self.db.get_expenses_per_month(book_id=book.id, year=year)
+        months = [month for month in range(1, 13)]
+        month_labels = [__(MONTH_LABELS[month], from_user.language_code) for month in range(1, 13)]
+        amounts = [0]*12
+        for record in records:
+            amounts[record.month-1] = record.amount
+
+        total_amount = sum(amounts)
+        max_amount = max(amounts)
+        period = f'{year}'
+        fig, ax = plt.subplots()
+        bars = ax.bar(months, amounts, label=month_labels, align='center')
+        fig.suptitle(
+            __(
+                text_dict=messages.REPORTS_BOOK_AND_PERIOD,
+                lang=from_user.language_code
+            ).format(
+                book_title=book.title,
+                currency=book.currency,
+                period=period
+            )
+        )
+        total_label = __(messages.TOTAL, lang=from_user.language_code)
+        ax.set_title(f'{total_label}: {total_amount:.2f} {book.currency}', fontweight='bold')
+
+        low_values = [f'{v:.2f}' if v < 0.15 * max_amount else '' for v in amounts]
+        nonlow_values = [f'{v:.2f}' if v >= 0.15 * max_amount else '' for v in amounts]
+        ax.bar_label(bars, nonlow_values, color='white',
+                     label_type='center', rotation='vertical')
+        ax.bar_label(bars, low_values, color='gray',
+                     label_type='edge', rotation='vertical', padding=5)
+        ax.set_xlim(0.5, 12.5)
+        ax.set_ylabel(book.currency)
+        ax.set_xlabel(period)
+        plt.xticks(months, month_labels, rotation='vertical')
         buffer = BytesIO()
         plt.savefig(buffer, format='png', bbox_inches='tight')
         buffer.seek(0)
