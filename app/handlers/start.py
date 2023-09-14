@@ -1,39 +1,33 @@
-from typing import Optional
+"""Handlers for /start workflow."""
 
-from aiogram import Dispatcher, Router
+from aiogram import Dispatcher
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
-from aiogram.types.user import User
 
 import messages
 import models
+from handlers import HandlerBase
 from utils import __
 
 
-class Start:
-    """Handlers for /start workflow."""
-    db: models.DB
+class Start(HandlerBase):
+    """Handler class for /start workflow."""
 
-    def __init__(self, db: models.DB, dp: Dispatcher, router: Router) -> None:
-        self.db = db
+    def __init__(self, db: models.DB, dp: Dispatcher) -> None:
+        super().__init__(db)
         dp.message.register(self.start, Command('start'))
-
-    async def _invalid_request(self, message: Message, state: FSMContext) -> None:
-        await state.clear()
-        await message.answer(text='Invalid request.')
 
     async def start(
         self,
         message: Message,
-        state: FSMContext,
-        from_user: Optional[User] = None
+        state: FSMContext
     ) -> None:
+        """Entrypoint for /start' command."""
         await state.clear()
-        from_user = from_user or message.from_user
         await message.answer(
             text=__(
                 text_dict=messages.START,
-                lang=from_user.language_code
+                lang=message.from_user.language_code
             ),
         )

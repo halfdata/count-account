@@ -42,7 +42,7 @@ async def main():
     ], language_code='ru')
     dp = Dispatcher()
     form_router = Router()
-    start_handler = Start(db, dp, form_router)
+    start_handler = Start(db, dp)
     books_handler = Books(db, dp, form_router)
     reports_handler = Reports(db, dp, form_router)
     expenses_handler = Expenses(db, dp, form_router)

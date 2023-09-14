@@ -1,3 +1,5 @@
+"""Handlers for expenses workflow."""
+
 from datetime import datetime
 from typing import Any, Optional
 
@@ -14,41 +16,35 @@ from aiogram.types.user import User
 
 import messages
 import models
-from utils import __, back_button
+from handlers import HandlerBase
+from utils import __
 from utils import DBUser
 
 
 class ExpensesState(StatesGroup):
+    """State for expenses."""
     category = State()
     amount = State()
 
 
-class Expenses:
+class Expenses(HandlerBase):
     """Handlers for expenses workflow."""
-    db: models.DB
 
     def __init__(self, db: models.DB, dp: Dispatcher, router: Router) -> None:
-        self.db = db
+        super().__init__(db)
         dp.message.register(self.expenses_message, F.text.regexp("^[\-\+]{0,1}\d+\.{0,1}\d*$"))
-        router.callback_query.register(self.categories_callback, ExpensesState.category)
+        router.callback_query.register(self.selector_categories_callback, ExpensesState.category)
 
-    async def _invalid_request(self, message: Message, state: FSMContext) -> None:
-        await state.clear()
-        await message.answer(text='Invalid request.')
-
-    async def expenses_message(self, message: Message, state: FSMContext) -> None:
+    @HandlerBase.active_book_required
+    async def expenses_message(
+            self,
+            message: Message,
+            state: FSMContext,
+            book: Any
+    ) -> None:
+        """Entrypoint for expenses."""
         await state.clear()
         amount = round(float(message.text), 2)
-        dbuser = DBUser(self.db, message.from_user)
-        book = dbuser.active_book()
-        if not book:
-            await message.answer(
-                text=__(
-                    text_dict=messages.ACTIVE_BOOK_REQUIRED,
-                    lang=message.from_user.language_code
-                ),
-            )
-            return
         if not amount:
             await message.answer(
                 text=__(
@@ -69,26 +65,19 @@ class Expenses:
                 book_title=book.title
             ),
         )
-        await self.categories(message, state, message.from_user)
+        await self.selector_categories(message, state=state, from_user=message.from_user)
 
-    async def categories(
+    @HandlerBase.active_book_required
+    async def selector_categories(
         self,
         message: Message,
         state: FSMContext,
+        book: Any,
         from_user: Optional[User] = None
     ) -> None:
+        """Displays message with category selector."""
         await state.set_state(ExpensesState.category)
         from_user = from_user or message.from_user
-        dbuser = DBUser(self.db, from_user)
-        book = dbuser.active_book()
-        if not book:
-            await message.answer(
-                text=__(
-                    text_dict=messages.ACTIVE_BOOK_REQUIRED,
-                    lang=from_user.language_code
-                ),
-            )
-            return
         data = await state.get_data()
         parent_category = None
         if 'category' in data:
@@ -119,7 +108,7 @@ class Expenses:
                     text=__(messages.BUTTON_SUBMIT, lang=from_user.language_code),
                     callback_data='/submit'
                 ),
-                back_button(from_user.language_code),
+                self.back_button(from_user.language_code),
             ])
             keyboard_inline = InlineKeyboardMarkup(inline_keyboard=button_groups)
             await message.answer(
@@ -145,18 +134,15 @@ class Expenses:
                 reply_markup=keyboard_inline,
             )
 
-    async def categories_callback(self, call: CallbackQuery, state: FSMContext) -> None:
+    @HandlerBase.active_book_required
+    async def selector_categories_callback(
+        self,
+        call: CallbackQuery,
+        state: FSMContext,
+        book: Any
+    ) -> None:
+        """Callback for category selector."""
         await call.message.edit_reply_markup(reply_markup=None)
-        dbuser = DBUser(self.db, call.from_user)
-        book = dbuser.active_book()
-        if not book:
-            await call.message.answer(
-                text=__(
-                    text_dict=messages.ACTIVE_BOOK_REQUIRED,
-                    lang=call.from_user.language_code
-                ),
-            )
-            return
         data = await state.get_data()
         category = self.db.get_category_by(
             book_id=book.id,
@@ -207,7 +193,7 @@ class Expenses:
                 await state.update_data(category=category.parent_id)
             else:
                 await state.update_data(category=0)
-            await self.categories(call.message, state, call.from_user)
+            await self.selector_categories(call.message, state=state, from_user=call.from_user)
             return
 
         category_id = int(call.data)
@@ -217,7 +203,7 @@ class Expenses:
             deleted=False
         )
         if not category:
-            await self._invalid_request(call.message, state)
+            await self._invalid_request(call.message, state=state)
             return
         await state.update_data(category=category_id)
-        await self.categories(call.message, state, call.from_user)
+        await self.selector_categories(call.message, state=state, from_user=call.from_user)
