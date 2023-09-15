@@ -54,11 +54,6 @@ BOOKS_TITLE_AVOID_SLASH = {
     'ru': 'Не начинайте название с символа <code>/</code>.',
 }
 
-BOOKS_CURRENCY_NOT_FOUND = {
-    'default': 'This currency doesn\'t exist.',
-    'ru': 'Такая валюта не существует.',
-}
-
 BOOKS_CURRENCY_UPDATED = {
     'default': 'The currency successfully updated.',
     'ru': 'Валюта обновлена.',

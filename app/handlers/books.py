@@ -1,3 +1,5 @@
+"""Handlers for reports workflow."""
+
 import re
 from datetime import datetime
 from typing import Optional
@@ -16,12 +18,12 @@ from aiogram.types.user import User
 
 import messages
 import models
-import utils
-from utils import __, back_button
-from utils import DBUser
+from handlers import HandlerBase, DBUser
+from utils import __, CURRENCIES
 
 
 class BooksState(StatesGroup):
+    """State for books."""
     book = State()
     action = State()
     shared_action = State()
@@ -32,12 +34,11 @@ class BooksState(StatesGroup):
     category_title = State()
 
 
-class Books:
-    """Handlers for /books workflow."""
-    db: models.DB
+class Books(HandlerBase):
+    """Handler class for /books workflow."""
 
     def __init__(self, db: models.DB, dp: Dispatcher, router: Router) -> None:
-        self.db = db
+        super().__init__(db)
         dp.message.register(self.books, Command('books'))
         router.callback_query.register(self.books_callback, BooksState.book)
         router.callback_query.register(self.actions_callback, BooksState.action)
@@ -48,16 +49,13 @@ class Books:
         router.message.register(self.category_title_message, BooksState.category_title)
         dp.message.register(self.join, Command('join'))
 
-    async def _invalid_request(self, message: Message, state: FSMContext) -> None:
-        await state.clear()
-        await message.answer(text='Invalid request.')
-
     async def books(
         self,
         message: Message,
         state: FSMContext,
         from_user: Optional[User] = None
     ) -> None:
+        """Entrypoint for '/book' command."""
         await state.clear()
         await state.set_state(BooksState.book)
         from_user = from_user or message.from_user
@@ -116,6 +114,7 @@ class Books:
         )
 
     async def books_callback(self, call: CallbackQuery, state: FSMContext) -> None:
+        """Callback for ook selector."""
         await call.message.edit_reply_markup(reply_markup=None)
         if call.data == '/new':
             await state.update_data(book='/new')
@@ -135,9 +134,9 @@ class Books:
         state: FSMContext,
         from_user: Optional[User] = None
     ) -> None:
+        """Displays actions for shared book."""
         await state.set_state(BooksState.shared_action)
         from_user = from_user or message.from_user
-        dbuser = DBUser(self.db, from_user)
         data = await state.get_data()
         shared_book_id = int(data['book'])
         shared_book = self.db.get_shared_book_by(
@@ -159,7 +158,7 @@ class Books:
                     text=__(messages.BUTTON_DISCONNECT, lang=from_user.language_code),
                     callback_data='/disconnect'
                 ),
-                back_button(from_user.language_code),
+                self.back_button(from_user.language_code),
             ],
         ]
         keyboard_inline = InlineKeyboardMarkup(inline_keyboard=button_groups)
@@ -176,6 +175,7 @@ class Books:
         )
 
     async def shared_actions_callback(self, call: CallbackQuery, state: FSMContext) -> None:
+        """Callback for actions for shared book."""
         await call.message.edit_reply_markup(reply_markup=None)
         dbuser = DBUser(self.db, call.from_user)
         data = await state.get_data()
@@ -231,9 +231,9 @@ class Books:
         state: FSMContext,
         from_user: Optional[User] = None
     ) -> None:
+        """Display actions for own book."""
         await state.set_state(BooksState.action)
         from_user = from_user or message.from_user
-        dbuser = DBUser(self.db, from_user)
         data = await state.get_data()
         book_id = int(data['book'])
         book = self.db.get_book_by(
@@ -270,7 +270,7 @@ class Books:
                 ),
             ],
             [
-                back_button(from_user.language_code),
+                self.back_button(from_user.language_code),
             ]
         ]
         keyboard_inline = InlineKeyboardMarkup(inline_keyboard=button_groups)
@@ -283,6 +283,7 @@ class Books:
         )
 
     async def actions_callback(self, call: CallbackQuery, state: FSMContext) -> None:
+        """Callback for actions for own book."""
         await call.message.edit_reply_markup(reply_markup=None)
         dbuser = DBUser(self.db, call.from_user)
         data = await state.get_data()
@@ -340,9 +341,9 @@ class Books:
         state: FSMContext,
         from_user: Optional[User] = None
     ) -> None:
+        """Displays message and ask user to enter book title."""
         await state.set_state(BooksState.title)
         from_user = from_user or message.from_user
-        dbuser = DBUser(self.db, from_user)
         await message.answer(
             text=__(
                 text_dict=messages.BOOKS_ADD_TITLE,
@@ -351,8 +352,8 @@ class Books:
         )
 
     async def title_message(self, message: Message, state: FSMContext) -> None:
-        dbuser = DBUser(self.db, message.from_user)
-        title = re.sub('\s{2,}', ' ', message.text.strip())
+        """Handles the book title entered by user."""
+        title = re.sub(r'\s{2,}', ' ', message.text.strip())
         if len(title) > 31:
             await message.answer(
                 text=__(
@@ -419,15 +420,15 @@ class Books:
         state: FSMContext,
         from_user: Optional[User] = None
     ) -> None:
+        """Displays currency selector."""
         await state.set_state(BooksState.currency)
         from_user = from_user or message.from_user
-        dbuser = DBUser(self.db, from_user)
         button_groups = []
         buttons = [
             InlineKeyboardButton(
                 text=currency,
                 callback_data=currency
-            ) for currency in utils.CURRENCIES
+            ) for currency in CURRENCIES
         ]
         for button in buttons:
             if len(button_groups) < 1 or len(button_groups[-1]) > 3:
@@ -443,16 +444,11 @@ class Books:
         )
 
     async def currency_callback(self, call: CallbackQuery, state: FSMContext) -> None:
+        """Callback for currency selector."""
         await call.message.edit_reply_markup(reply_markup=None)
-        dbuser = DBUser(self.db, call.from_user)
         currency = call.data
-        if currency not in utils.CURRENCIES:
-            await call.message.answer(
-                text=__(
-                    text_dict=messages.BOOKS_CURRENCY_invalid_request,
-                    lang=call.from_user.language_code
-                ),
-            )
+        if currency not in CURRENCIES:
+            self._invalid_request(call.message, state=state)
             return
         await state.update_data(currency=currency)
         data = await state.get_data()
@@ -463,12 +459,16 @@ class Books:
                 title=data['title'],
                 currency=currency,
                 created=datetime.utcnow(),
-            )    
+            )
             await call.message.answer(
                 text=__(
                     text_dict=messages.BOOKS_SUCCESSFULLY_CREATED,
                     lang=call.from_user.language_code
-                ).format(title=data['title'], currency=data['currency'], book_uid=book_ids['book_uid']),
+                ).format(
+                    title=data['title'],
+                    currency=data['currency'],
+                    book_uid=book_ids['book_uid']
+                ),
             )
             await self.books(call.message, state, call.from_user)
             return
@@ -479,7 +479,7 @@ class Books:
             deleted=False
         )
         if not book:
-            await self._invalid_request(call.message, state)
+            await self._invalid_request(call.message, state=state)
             return
         self.db.update_book(id=book_id, currency=currency)       
         await call.message.answer(
@@ -496,6 +496,7 @@ class Books:
         state: FSMContext,
         from_user: Optional[User] = None
     ) -> None:
+        """Displays root category selector."""
         await state.update_data(parent_category=0)
         await self._categories(message, state, from_user)
 
@@ -505,9 +506,9 @@ class Books:
         state: FSMContext,
         from_user: Optional[User] = None
     ) -> None:
+        """Displays category selector."""
         await state.set_state(BooksState.category)
         from_user = from_user or message.from_user
-        dbuser = DBUser(self.db, from_user)
         data = await state.get_data()
         book_id = int(data['book'])
         book = self.db.get_book_by(
@@ -557,7 +558,7 @@ class Books:
                 text=__(messages.BUTTON_ADD_CATEGORY, lang=from_user.language_code),
                 callback_data='/new'
             ),
-            back_button(from_user.language_code)
+            self.back_button(from_user.language_code)
         ])
         keyboard_inline = InlineKeyboardMarkup(inline_keyboard=button_groups)
         if not parent_category:
@@ -578,8 +579,8 @@ class Books:
             )
 
     async def categories_callback(self, call: CallbackQuery, state: FSMContext) -> None:
+        """Callback for category selector."""
         await call.message.edit_reply_markup(reply_markup=None)
-        dbuser = DBUser(self.db, call.from_user)
         data = await state.get_data()
         book_id = int(data['book'])
         book = self.db.get_book_by(
@@ -659,9 +660,9 @@ class Books:
         state: FSMContext,
         from_user: Optional[User] = None
     ) -> None:
+        """Displays message to request category title."""
         await state.set_state(BooksState.category_title)
         from_user = from_user or message.from_user
-        dbuser = DBUser(self.db, from_user)
         await message.answer(
             text=__(
                 text_dict=messages.CATEGORIES_ADD_TITLE,
@@ -670,7 +671,7 @@ class Books:
         )
 
     async def category_title_message(self, message: Message, state: FSMContext) -> None:
-        dbuser = DBUser(self.db, message.from_user)
+        """Handles entered category title."""
         data = await state.get_data()
         book_id = int(data['book'])
         book = self.db.get_book_by(
@@ -681,7 +682,7 @@ class Books:
         if not book:
             await self._invalid_request(message, state)
             return
-        title = re.sub('\s{2,}', ' ', message.text.strip())
+        title = re.sub(r'\s{2,}', ' ', message.text.strip())
         if len(title) > 31:
             await message.answer(
                 text=__(
@@ -763,7 +764,7 @@ class Books:
     async def join(self, message: Message, state: FSMContext) -> None:
         """Join current user to the book."""
         await state.clear()
-        request = re.sub('\s{2,}', ' ', message.text.strip()).split()
+        request = re.sub(r'\s{2,}', ' ', message.text.strip()).split()
         if len(request) != 2:
             await self._invalid_request(message, state)
             return
@@ -802,4 +803,3 @@ class Books:
             ).format(title=book.title, currency=book.currency),
         )
         return
-
