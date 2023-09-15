@@ -8,8 +8,8 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery, InlineKeyboardButton
 from aiogram.types.user import User
 
-import messages
-import models
+from utils import messages
+from utils import models
 from utils import __
 
 

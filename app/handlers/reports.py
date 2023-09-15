@@ -19,9 +19,9 @@ from aiogram.types.user import User
 from aiogram.types.input_file import BufferedInputFile
 import matplotlib.pyplot as plt
 
-import messages
-import models
 from handlers import HandlerBase
+from utils import messages
+from utils import models
 from utils import __
 from utils import MONTH_LABELS
 

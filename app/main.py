@@ -2,24 +2,27 @@
 
 import asyncio
 import logging
+import os
 import sys
-from os import getenv
 
 from aiogram import Bot, Dispatcher, Router
 from aiogram.enums import ParseMode
 from aiogram.types.bot_command import BotCommand
 
-import models
 from handlers.books import Books
 from handlers.expenses import Expenses
 from handlers.reports import Reports
 from handlers.start import Start
+from utils import models
 
-DB_PATH = getenv('DB_PATH', '../db')
-TELEGRAM_TOKEN = getenv('TELEGRAM_TOKEN')
+DB_PATH = os.getenv(
+    'DB_PATH',
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)
+TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 
 if not TELEGRAM_TOKEN:
-    exit('Please make sure that you set TELEGRAM_TOKEN as environment varaible.')
+    sys.exit('Please make sure that you set TELEGRAM_TOKEN as environment varaible.')
 
 db = models.DB(f'sqlite:///{DB_PATH}/db.sqlite3')
 

@@ -1,6 +1,6 @@
 """Some fixed stuff here."""
 
-import messages
+from utils import messages
 
 LANGUAGES = {
     'en': 'English',

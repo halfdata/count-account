@@ -16,9 +16,9 @@ from aiogram.types import (
 )
 from aiogram.types.user import User
 
-import messages
-import models
 from handlers import HandlerBase, DBUser
+from utils import messages
+from utils import models
 from utils import __, CURRENCIES
 
 

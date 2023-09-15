@@ -5,9 +5,9 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
-import messages
-import models
 from handlers import HandlerBase
+from utils import messages
+from utils import models
 from utils import __
 
 
