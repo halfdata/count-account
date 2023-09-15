@@ -66,7 +66,7 @@ class Books:
             user_id=from_user.id,
             deleted=False
         )
-        
+
         button_groups = []
         buttons = []
         for book in books:

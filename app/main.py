@@ -1,3 +1,5 @@
+"""Telegram bot that allows to track your expenses."""
+
 import asyncio
 import logging
 import sys
@@ -21,8 +23,8 @@ if not TELEGRAM_TOKEN:
 
 db = models.DB(f'sqlite:///{DB_PATH}/db.sqlite3')
 
-
 async def main():
+    """Main method."""
     bot = Bot(token=TELEGRAM_TOKEN, parse_mode=ParseMode.HTML)
     await bot.set_my_commands([
         BotCommand(command='start', description='About Count Account'),

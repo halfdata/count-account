@@ -18,7 +18,6 @@ import messages
 import models
 from handlers import HandlerBase
 from utils import __
-from utils import DBUser
 
 
 class ExpensesState(StatesGroup):
@@ -32,7 +31,7 @@ class Expenses(HandlerBase):
 
     def __init__(self, db: models.DB, dp: Dispatcher, router: Router) -> None:
         super().__init__(db)
-        dp.message.register(self.expenses_message, F.text.regexp("^[\-\+]{0,1}\d+\.{0,1}\d*$"))
+        dp.message.register(self.expenses_message, F.text.regexp(r"^[\-\+]{0,1}\d+\.{0,1}\d*$"))
         router.callback_query.register(self.selector_categories_callback, ExpensesState.category)
 
     @HandlerBase.active_book_required
@@ -40,7 +39,7 @@ class Expenses(HandlerBase):
             self,
             message: Message,
             state: FSMContext,
-            book: Any
+            book: Optional[Any] = None
     ) -> None:
         """Entrypoint for expenses."""
         await state.clear()
@@ -72,7 +71,7 @@ class Expenses(HandlerBase):
         self,
         message: Message,
         state: FSMContext,
-        book: Any,
+        book: Optional[Any] = None,
         from_user: Optional[User] = None
     ) -> None:
         """Displays message with category selector."""

@@ -54,7 +54,7 @@ class Reports(HandlerBase):
         self,
         message: Message,
         state: FSMContext,
-        book: Any,
+        book: Optional[Any] = None,
         from_user: Optional[User] = None
     ) -> None:
         """Entrypoint for 'Today's expenses'."""
@@ -75,7 +75,7 @@ class Reports(HandlerBase):
         self,
         message: Message,
         state: FSMContext,
-        book: Any,
+        book: Optional[Any] = None,
         from_user: Optional[User] = None
     ) -> None:
         """Entrypoint for 'Yesterday's expenses'."""
@@ -96,7 +96,7 @@ class Reports(HandlerBase):
         self,
         message: Message,
         state: FSMContext,
-        book: Any,
+        book: Optional[Any] = None,
         from_user: Optional[User] = None
     ) -> None:
         """Entrypoint for 'Expenses for the current month'."""
@@ -113,7 +113,6 @@ class Reports(HandlerBase):
         )
         await self.per_day_report(
             message,
-            state=state,
             from_user=from_user,
             book=book,
             year=ct.year,
@@ -125,10 +124,11 @@ class Reports(HandlerBase):
         self,
         message: Message,
         state: FSMContext,
-        book: Any,
+        book: Optional[Any] = None,
         from_user: Optional[User] = None
     ) -> None:
         """Entrypoint for 'Expenses for the specified year'."""
+        del book
         await state.clear()
         from_user = from_user or message.from_user
         await state.update_data(report_type='year')
@@ -139,10 +139,11 @@ class Reports(HandlerBase):
         self,
         message: Message,
         state: FSMContext,
-        book: Any,
+        book: Optional[Any] = None,
         from_user: Optional[User] = None
     ) -> None:
         """Entrypoint for 'Expenses for the specified month'."""
+        del book
         await state.clear()
         from_user = from_user or message.from_user
         await state.update_data(report_type='month')
@@ -153,10 +154,11 @@ class Reports(HandlerBase):
         self,
         message: Message,
         state: FSMContext,
-        book: Any,
+        book: Optional[Any] = None,
         from_user: Optional[User] = None
     ) -> None:
         """Entrypoint for 'Expenses for the specified day'."""
+        del book
         await state.clear()
         from_user = from_user or message.from_user
         await state.update_data(report_type='day')
@@ -167,7 +169,7 @@ class Reports(HandlerBase):
         self,
         message: Message,
         state: FSMContext,
-        book: Any,
+        book: Optional[Any] = None,
         from_user: Optional[User] = None
     ) -> None:
         """Displays message with year selector."""
@@ -232,7 +234,7 @@ class Reports(HandlerBase):
         self,
         message: Message,
         state: FSMContext,
-        book: Any,
+        book: Optional[Any] = None,
         from_user: Optional[User] = None
     ) -> None:
         """Report for the specified year."""
@@ -247,7 +249,6 @@ class Reports(HandlerBase):
         )
         await self.per_month_report(
             message,
-            state=state,
             from_user=from_user,
             book=book,
             year=data['year']
@@ -258,7 +259,7 @@ class Reports(HandlerBase):
         self,
         message: Message,
         state: FSMContext,
-        book: Any,
+        book: Optional[Any] = None,
         from_user: Optional[User] = None
     ) -> None:
         """Displays message with month selector."""
@@ -330,7 +331,7 @@ class Reports(HandlerBase):
         self,
         message: Message,
         state: FSMContext,
-        book: Any,
+        book: Optional[Any] = None,
         from_user: Optional[User] = None
     ) -> None:
         """Report for the specified month."""
@@ -346,7 +347,6 @@ class Reports(HandlerBase):
         )
         await self.per_day_report(
             message,
-            state=state,
             from_user=from_user,
             book=book,
             year=data['year'],
@@ -358,7 +358,7 @@ class Reports(HandlerBase):
         self,
         message: Message,
         state: FSMContext,
-        book: Any,
+        book: Optional[Any] = None,
         from_user: Optional[User] = None
     ) -> None:
         """Displays message with day selector."""
@@ -407,7 +407,7 @@ class Reports(HandlerBase):
         self,
         message: Message,
         state: FSMContext,
-        book: Any,
+        book: Optional[Any] = None,
         from_user: Optional[User] = None
     ) -> None:
         """Report for the specified day."""
@@ -435,7 +435,7 @@ class Reports(HandlerBase):
         message: Message,
         state: FSMContext,
         from_user: User,
-        book: Any,
+        book: Optional[Any] = None,
         year: Optional[int] = None,
         month: Optional[int] = None,
         day: Optional[int] = None
@@ -513,7 +513,6 @@ class Reports(HandlerBase):
     async def per_day_report(
         self,
         message: Message,
-        state: FSMContext,
         from_user: User,
         book: Any,
         year: int,
@@ -572,7 +571,6 @@ class Reports(HandlerBase):
     async def per_month_report(
         self,
         message: Message,
-        state: FSMContext,
         from_user: User,
         book: Any,
         year: int
