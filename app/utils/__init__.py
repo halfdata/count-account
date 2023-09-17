@@ -40,6 +40,7 @@ DEFAULT_EXPENSE_CATEGORIES = {
             'Car Wash': {},
             'Gasoline': {},
         },
+        'Beauty & Wellness': {},
         'Clothes & Shoes': {},
         'Cosmetics': {},
         'Electronics': {
@@ -52,7 +53,9 @@ DEFAULT_EXPENSE_CATEGORIES = {
             'Cinema': {},
             'Circus': {},
             'Concert': {},
+            'Museum': {},
             'Show': {},
+            'Sport Games': {},
             'Theater': {},
             'Waterpark': {},
         },
@@ -60,13 +63,16 @@ DEFAULT_EXPENSE_CATEGORIES = {
         'Gift & Presents': {},
         'Grocery': {},
         'Household Goods': {},
+        'Kid\'s Activities': {},
         'Medicine': {
             'Drug Store': {},
             'Doctor': {},
             'Massage': {},
+            'Medical Tests': {},
         },
         'Other': {},
         'Restaurants': {
+            'Bar': {},
             'Cafe': {},
             'Street Food': {},
             'Take Away': {},
@@ -76,6 +82,8 @@ DEFAULT_EXPENSE_CATEGORIES = {
             'Delivery': {},
             'Tips': {},
         },
+        'Sport Activities': {},
+        'Stationery': {},
         'Transport': {
             'Airplane': {},
             'Autobus': {},
