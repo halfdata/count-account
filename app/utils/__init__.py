@@ -31,6 +31,90 @@ MONTH_LABELS = {
     12: messages.DECEMBER,
 }
 
+DEFAULT_EXPENSE_CATEGORIES = {
+    'default': {
+        'Automobile': {
+            'Auto Parts': {},
+            'Auto Service': {},
+            'Car Rental': {},
+            'Car Wash': {},
+            'Gasoline': {},
+        },
+        'Clothes & Shoes': {},
+        'Cosmetics': {},
+        'Electronics': {
+            'Appliances': {},
+            'Audio & Video': {},
+            'Gadgets': {},
+        },
+        'Entertainment': {
+            'Attractions': {},
+            'Cinema': {},
+            'Circus': {},
+            'Concert': {},
+            'Show': {},
+            'Theater': {},
+            'Waterpark': {},
+        },
+        'Furniture': {},
+        'Gift & Presents': {},
+        'Grocery': {},
+        'Household Goods': {},
+        'Medicine': {
+            'Drug Store': {},
+            'Doctor': {},
+            'Massage': {},
+        },
+        'Other': {},
+        'Restaurants': {
+            'Cafe': {},
+            'Street Food': {},
+            'Take Away': {},
+        },
+        'Services': {
+            'Administrative': {},
+            'Delivery': {},
+            'Tips': {},
+        },
+        'Transport': {
+            'Airplane': {},
+            'Autobus': {},
+            'Public Transport': {},
+            'Taxi': {},
+            'Train': {},
+            'Tram': {},
+        },
+        'Utilities': {
+            'Electricity': {},
+            'Heating': {},
+            'Internet': {},
+            'Media': {},
+            'Telephone': {},
+            'TV': {},
+            'Water': {},
+        },
+    },
+    'ru': {
+        'Коммунальные услуги': {
+            'Интернет': {},
+            'Телефон': {},
+            'ТВ': {},
+            'Вода': {},
+            'Отопление': {},
+            'Электричество': {},
+            'Квартплата': {},
+        },
+        'Мебель': {},
+        'Продукты питания': {},
+        'Транспорт': {
+            'Автобус': {},
+            'Поезд': {},
+            'Самолет': {},
+            'Такси': {},
+        }
+    },
+}
+
 def __(text_dict: dict[str, str], lang: str = 'en'):
     """Get message text."""
     if lang in text_dict:
