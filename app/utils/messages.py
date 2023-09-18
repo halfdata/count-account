@@ -99,6 +99,17 @@ BOOKS_SET_CURRENCY = {
     'ru': 'Выберите валюту учетной книги.',
 }
 
+BOOKS_CREATE_DEFAULT_CATEGORIES = {
+    'default': (
+        'Create default list of categories. '
+        'You can always add/edit/remove categories later.'
+    ),
+    'ru': (
+        'Хотите автоматически создать список категорий? '
+        'Вы всегда можете изменить его позже.'
+    ),
+}
+
 BOOKS_CONNECTED = {
     'default': (
         'You are joined to the book <strong>{title}</strong> '

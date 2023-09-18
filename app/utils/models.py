@@ -189,6 +189,8 @@ class DB:
 
     def add_book(self, **kwargs) -> dict[str, Any]:
         """Insert new book and return its book_uid."""
+        if 'default_expense_categories' in kwargs:
+            default_expense_categories = kwargs.pop('default_expense_categories')
         with self.engine.connect() as connection:
             id = connection.execute(
                 insert(self.book_table).values(**kwargs)).inserted_primary_key.id
@@ -197,6 +199,13 @@ class DB:
                 update(self.book_table)
                     .where(self.book_table.c.id == id)
                     .values(book_uid=book_uid))
+            self._add_categories(
+                connection=connection,
+                book_id=id,
+                category_type='expense',
+                parent_id=0,
+                categories=default_expense_categories
+            )
             connection.commit()
         return {'id': id, 'book_uid': book_uid}
 
@@ -280,6 +289,33 @@ class DB:
         with self.engine.connect() as connection:
             self._delete_category(connection, id)
             connection.commit()
+
+    def _add_categories(
+            self,
+            connection: Connection,
+            book_id: int,
+            category_type: str,
+            parent_id: int,
+            categories: dict[str, Any]
+    ) -> None:
+        """Recursively add categories to specified book."""
+        for category in categories:
+            category_id = connection.execute(
+                insert(self.category_table).values(
+                    book_id=book_id,
+                    parent_id=parent_id,
+                    title=category,
+                    deleted=False
+                )
+            ).inserted_primary_key.id
+            self._add_categories(
+                connection=connection,
+                book_id=book_id,
+                category_type=category_type,
+                parent_id=category_id,
+                categories=categories[category]
+            )
+
 
     def add_expense(self, **kwargs):
         """Insert new expense."""

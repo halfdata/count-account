@@ -19,7 +19,7 @@ from aiogram.types.user import User
 from handlers import HandlerBase, DBUser
 from utils import messages
 from utils import models
-from utils import __, CURRENCIES
+from utils import __, CURRENCIES, DEFAULT_EXPENSE_CATEGORIES
 
 
 class BooksState(StatesGroup):
@@ -29,6 +29,7 @@ class BooksState(StatesGroup):
     shared_action = State()
     title = State()
     currency = State()
+    import_categories = State()
     parent_category = State()
     category = State()
     category_title = State()
@@ -45,6 +46,7 @@ class Books(HandlerBase):
         router.callback_query.register(self.shared_actions_callback, BooksState.shared_action)
         router.message.register(self.title_message, BooksState.title)
         router.callback_query.register(self.currency_callback, BooksState.currency)
+        router.callback_query.register(self.import_categories_callback, BooksState.import_categories)
         router.callback_query.register(self.categories_callback, BooksState.category)
         router.message.register(self.category_title_message, BooksState.category_title)
         dp.message.register(self.join, Command('join'))
@@ -453,24 +455,7 @@ class Books(HandlerBase):
         await state.update_data(currency=currency)
         data = await state.get_data()
         if data['book'] == '/new':
-            await state.clear()
-            book_ids = self.db.add_book(
-                user_id=call.from_user.id,
-                title=data['title'],
-                currency=currency,
-                created=datetime.utcnow(),
-            )
-            await call.message.answer(
-                text=__(
-                    text_dict=messages.BOOKS_SUCCESSFULLY_CREATED,
-                    lang=call.from_user.language_code
-                ).format(
-                    title=data['title'],
-                    currency=data['currency'],
-                    book_uid=book_ids['book_uid']
-                ),
-            )
-            await self.books(call.message, state, call.from_user)
+            await self.import_categories(call.message, state, call.from_user)
             return
         book_id = int(data['book'])
         book = self.db.get_book_by(
@@ -489,6 +474,65 @@ class Books(HandlerBase):
             ),
         )
         await self.actions(call.message, state, call.from_user)
+
+    async def import_categories(
+        self,
+        message: Message,
+        state: FSMContext,
+        from_user: Optional[User] = None
+    ) -> None:
+        """Ask user either import default categories or not."""
+        await state.set_state(BooksState.import_categories)
+        from_user = from_user or message.from_user
+        buttons = [
+            InlineKeyboardButton(
+                text='Yes',
+                callback_data='/yes'
+            ),
+            InlineKeyboardButton(
+                text='No',
+                callback_data='/no'
+            ),
+        ]
+        keyboard_inline = InlineKeyboardMarkup(inline_keyboard=[buttons])
+        await message.answer(
+            text=__(
+                text_dict=messages.BOOKS_CREATE_DEFAULT_CATEGORIES,
+                lang=from_user.language_code
+            ),
+            reply_markup=keyboard_inline,
+        )
+
+    async def import_categories_callback(self, call: CallbackQuery, state: FSMContext) -> None:
+        """Callback for import_categories."""
+        await call.message.edit_reply_markup(reply_markup=None)
+        data = await state.get_data()
+        await state.clear()
+        default_expense_categories = {}
+        if call.data == '/yes':
+            default_expense_categories=__(
+                text_dict=DEFAULT_EXPENSE_CATEGORIES,
+                lang=call.from_user.language_code
+            )
+        book_ids = self.db.add_book(
+            user_id=call.from_user.id,
+            title=data['title'],
+            currency=data['currency'],
+            created=datetime.utcnow(),
+            default_expense_categories=default_expense_categories
+        )
+        await call.message.answer(
+            text=__(
+                text_dict=messages.BOOKS_SUCCESSFULLY_CREATED,
+                lang=call.from_user.language_code
+            ).format(
+                title=data['title'],
+                currency=data['currency'],
+                book_uid=book_ids['book_uid']
+            ),
+        )
+        await self.books(call.message, state, call.from_user)
+        return
 
     async def categories(
         self,
