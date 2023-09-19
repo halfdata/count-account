@@ -1,5 +1,6 @@
 """Some fixed stuff here."""
 
+import enum
 from typing import Any
 from utils import messages
 
@@ -180,3 +181,9 @@ def __(text_dict: dict[str, Any], lang: str = 'en') -> Any:
     if lang in text_dict:
         return text_dict[lang]
     return text_dict['default']
+
+
+class CategoryType(enum.Enum):
+    """Types of categories."""
+    EXPENSE = 'expense'
+    INCOME = 'income'

@@ -1,23 +1,35 @@
 """Defines class to work with database."""
+
 from secrets import token_urlsafe
 from typing import Any, Optional
 
 from sqlalchemy import Table, Index, Column
-from sqlalchemy import Integer, String, DateTime, Boolean, Text, Float
-from sqlalchemy import MetaData
+from sqlalchemy import Integer, String, DateTime, Boolean, Text, Float, Enum
+from sqlalchemy import MetaData, DDL
 from sqlalchemy import create_engine, Engine
 from sqlalchemy import select, insert, update, func, asc
 from sqlalchemy.engine.base import Connection
+from sqlalchemy.exc import OperationalError
+
+from utils import CategoryType
 
 class DB:
     """Definition of database tables."""
     metadata_obj: MetaData = MetaData()
     engine: Engine
+    log_table: Table
+    user_table: Table
+    book_table: Table
+    category_table: Table
+    expense_table: Table
+    shared_book_table: Table
+
 
     def __init__(self, database_url: str = 'sqlite:///db.sqlite3'):
         self.engine = create_engine(database_url)
         self._define_db_tables()
         self.metadata_obj.create_all(self.engine)
+        self._alter_schema()
 
     def _define_db_tables(self) -> None:
         """Define required database tables."""
@@ -64,6 +76,7 @@ class DB:
             Column("id", Integer, primary_key=True),
             Column("parent_id", Integer, default=0),
             Column("book_id", Integer),
+            Column("category_type", Enum(CategoryType), default=CategoryType.EXPENSE),
             Column("title", String(255)),
             Column("deleted", Boolean, default=False),
             Index("idx_categories_parent_id", "parent_id"),
@@ -99,6 +112,21 @@ class DB:
             Index("idx_shared_books_user_id", "user_id"),
             Index("idx_shared_books_book_id", "book_id"),
         )
+
+    def _alter_schema(self) -> None:
+        """Alter database schema, if necessary."""
+        column = Column("category_type", Enum(CategoryType), default=CategoryType.EXPENSE)
+        column_name = column.compile(dialect=self.engine.dialect)
+        column_type = column.type.compile(self.engine.dialect)
+        try:
+            with self.engine.connect() as connection:
+                connection.execute(DDL(
+                    f"ALTER TABLE categories ADD COLUMN {column_name} "
+                    f"{column_type} DEFAULT('{CategoryType.EXPENSE.value}')"
+                ))
+                connection.commit()
+        except OperationalError:
+            pass
 
     def add_log_record(self, **kwargs) -> int:
         """Insert new log record."""
@@ -189,6 +217,7 @@ class DB:
 
     def add_book(self, **kwargs) -> dict[str, Any]:
         """Insert new book and return its book_uid."""
+        default_expense_categories = {}
         if 'default_expense_categories' in kwargs:
             default_expense_categories = kwargs.pop('default_expense_categories')
         with self.engine.connect() as connection:
@@ -202,7 +231,7 @@ class DB:
             self._add_categories(
                 connection=connection,
                 book_id=id,
-                category_type='expense',
+                category_type=CategoryType.EXPENSE,
                 parent_id=0,
                 categories=default_expense_categories
             )
@@ -220,6 +249,7 @@ class DB:
     def get_categories_by(self, *,
                         book_id: int,
                         parent_id: Optional[int] = None,
+                        category_type: Optional[CategoryType] = None,
                         deleted: Optional[bool] = None,
                         offset: Optional[int] = 0,
                         number: Optional[int] = 100) -> list[Any]:
@@ -232,6 +262,8 @@ class DB:
                 .limit(number))
             if parent_id is not None:
                 statement = statement.where(self.category_table.c.parent_id == parent_id)
+            if category_type is not None:
+                statement = statement.where(self.category_table.c.category_type == category_type)
             if deleted is not None:
                 statement = statement.where(self.category_table.c.deleted == deleted)
             categories = connection.execute(statement).all()
@@ -241,6 +273,7 @@ class DB:
                         book_id: int,
                         id: Optional[int] = None,
                         parent_id: Optional[int] = None,
+                        category_type: Optional[CategoryType] = None,
                         title: Optional[str] = None,
                         deleted: Optional[bool] = None) -> Any:
         """Get category from DB."""
@@ -250,6 +283,8 @@ class DB:
                 statement = statement.where(self.category_table.c.id == id)
             if parent_id is not None:
                 statement = statement.where(self.category_table.c.parent_id == parent_id)
+            if category_type is not None:
+                statement = statement.where(self.category_table.c.category_type == category_type)
             if title is not None:
                 statement = statement.where(self.category_table.c.title == title)
             if deleted is not None:
@@ -304,6 +339,7 @@ class DB:
                 insert(self.category_table).values(
                     book_id=book_id,
                     parent_id=parent_id,
+                    category_type=category_type,
                     title=category,
                     deleted=False
                 )
@@ -341,7 +377,9 @@ class DB:
                 )
                 .select_from(self.expense_table)
                 .join(
-                    self.category_table, self.expense_table.c.category_id == self.category_table.c.id,
+                    self.category_table,
+                    self.expense_table.c.category_id == self.category_table.c.id and
+                    self.category_table.c.category_type == CategoryType.EXPENSE.value,
                     isouter=True
                 )
                 .where(self.expense_table.c.book_id == book_id)
