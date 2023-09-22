@@ -20,6 +20,7 @@ from aiogram.types.input_file import BufferedInputFile
 import matplotlib.pyplot as plt
 
 from handlers import HandlerBase
+from utils import CategoryType
 from utils import messages
 from utils import models
 from utils import __
@@ -65,6 +66,7 @@ class Reports(HandlerBase):
             state=state,
             from_user=from_user,
             book=book,
+            category_type=CategoryType.EXPENSE,
             year=ct.year,
             month=ct.month,
             day=ct.day
@@ -86,6 +88,7 @@ class Reports(HandlerBase):
             state=state,
             from_user=from_user,
             book=book,
+            category_type=CategoryType.EXPENSE,
             year=ct.year,
             month=ct.month,
             day=ct.day
@@ -108,6 +111,7 @@ class Reports(HandlerBase):
             state=state,
             from_user=from_user,
             book=book,
+            category_type=CategoryType.EXPENSE,
             year=ct.year,
             month=ct.month
         )
@@ -115,6 +119,7 @@ class Reports(HandlerBase):
             message,
             from_user=from_user,
             book=book,
+            category_type=CategoryType.EXPENSE,
             year=ct.year,
             month=ct.month
         )
@@ -174,7 +179,7 @@ class Reports(HandlerBase):
     ) -> None:
         """Displays message with year selector."""
         from_user = from_user or message.from_user
-        records = self.db.get_expenses_per_year(book.id)
+        records = self.db.get_expenses_per_year(book.id, category_type=None)
         if not records:
             await message.answer(
                 text=__(
@@ -245,12 +250,14 @@ class Reports(HandlerBase):
             state=state,
             from_user=from_user,
             book=book,
+            category_type=CategoryType.EXPENSE,
             year=data['year']
         )
         await self.per_month_report(
             message,
             from_user=from_user,
             book=book,
+            category_type=CategoryType.EXPENSE,
             year=data['year']
         )
 
@@ -266,7 +273,7 @@ class Reports(HandlerBase):
         from_user = from_user or message.from_user
         data = await state.get_data()
         year = int(data['year'])
-        records = self.db.get_expenses_per_month(book.id, year)
+        records = self.db.get_expenses_per_month(book.id, category_type=None, year=year)
         if not records:
             await message.answer(
                 text=__(
@@ -342,6 +349,7 @@ class Reports(HandlerBase):
             state=state,
             from_user=from_user,
             book=book,
+            category_type=CategoryType.EXPENSE,
             year=data['year'],
             month=data['month']
         )
@@ -349,6 +357,7 @@ class Reports(HandlerBase):
             message,
             from_user=from_user,
             book=book,
+            category_type=CategoryType.EXPENSE,
             year=data['year'],
             month=data['month']
         )
@@ -366,7 +375,7 @@ class Reports(HandlerBase):
         data = await state.get_data()
         year = int(data['year'])
         month = int(data['month'])
-        records = self.db.get_expenses_per_day(book.id, year, month)
+        records = self.db.get_expenses_per_day(book.id, category_type=None, year=year, month=month)
         if not records:
             await message.answer(
                 text=__(
@@ -418,6 +427,7 @@ class Reports(HandlerBase):
             state=state,
             from_user=from_user,
             book=book,
+            category_type=CategoryType.EXPENSE,
             year=data['year'],
             month=data['month'],
             day=data['day']
@@ -435,7 +445,8 @@ class Reports(HandlerBase):
         message: Message,
         state: FSMContext,
         from_user: User,
-        book: Optional[Any] = None,
+        book: Any,
+        category_type: CategoryType,
         year: Optional[int] = None,
         month: Optional[int] = None,
         day: Optional[int] = None
@@ -456,6 +467,7 @@ class Reports(HandlerBase):
             return
         records = self.db.get_expenses_per_category(
             book_id=book.id,
+            category_type=category_type,
             year=year,
             month=month,
             day=day
@@ -515,13 +527,14 @@ class Reports(HandlerBase):
         message: Message,
         from_user: User,
         book: Any,
+        category_type: CategoryType,
         year: int,
         month: int
     ) -> None:
         """Per day expenses."""
         from_user = from_user or message.from_user
         records = self.db.get_expenses_per_day(
-            book_id=book.id, year=year, month=month)
+            book_id=book.id, category_type=category_type, year=year, month=month)
         _, last_day = calendar.monthrange(year, month)
         days = [day for day in range(1, last_day + 1)]
         amounts = [0]*last_day
@@ -573,11 +586,12 @@ class Reports(HandlerBase):
         message: Message,
         from_user: User,
         book: Any,
+        category_type: CategoryType,
         year: int
     ) -> None:
         """Per month expenses."""
         from_user = from_user or message.from_user
-        records = self.db.get_expenses_per_month(book_id=book.id, year=year)
+        records = self.db.get_expenses_per_month(book_id=book.id, category_type=category_type, year=year)
         months = [month for month in range(1, 13)]
         month_labels = [__(MONTH_LABELS[month], from_user.language_code) for month in range(1, 13)]
         amounts = [0]*12

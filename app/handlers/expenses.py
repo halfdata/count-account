@@ -15,6 +15,7 @@ from aiogram.types import (
 from aiogram.types.user import User
 
 from handlers import HandlerBase
+from utils import CategoryType
 from utils import messages
 from utils import models
 from utils import __
@@ -22,6 +23,7 @@ from utils import __
 
 class ExpensesState(StatesGroup):
     """State for expenses."""
+    category_type = State()
     category = State()
     amount = State()
 
@@ -53,6 +55,7 @@ class Expenses(HandlerBase):
             )
             return
         await state.update_data(amount=amount)
+        await state.update_data(category_type=CategoryType.EXPENSE)
         await state.update_data(category=0)
         await message.answer(
             text=__(
@@ -83,10 +86,12 @@ class Expenses(HandlerBase):
             parent_category = self.db.get_category_by(
                 book_id=book.id,
                 id=int(data['category']),
+                category_type=data['category_type'],
                 deleted=False,
             )
         categories = self.db.get_categories_by(
             book_id=book.id,
+            category_type=data['category_type'],
             parent_id=(0 if not parent_category else parent_category.id),
             deleted=False
         )
@@ -145,6 +150,7 @@ class Expenses(HandlerBase):
         data = await state.get_data()
         category = self.db.get_category_by(
             book_id=book.id,
+            category_type=data['category_type'],
             id=int(data['category']),
             deleted=False
         )
@@ -155,6 +161,7 @@ class Expenses(HandlerBase):
                 user_id=call.from_user.id,
                 book_id=book.id,
                 category_id=(0 if not category else category.id),
+                category_type=data['category_type'],
                 amount=amount,
                 year=created.year,
                 month=created.month,
@@ -198,6 +205,7 @@ class Expenses(HandlerBase):
         category_id = int(call.data)
         category = self.db.get_category_by(
             book_id=book.id,
+            category_type=data['category_type'],
             id=category_id,
             deleted=False
         )

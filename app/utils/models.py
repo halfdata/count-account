@@ -89,6 +89,7 @@ class DB:
             Column("user_id", Integer),
             Column("book_id", Integer),
             Column("category_id", Integer),
+            Column("category_type", Enum(CategoryType), default=CategoryType.EXPENSE),
             Column("amount", Float),
             Column("year", Integer),
             Column("month", Integer),
@@ -122,7 +123,19 @@ class DB:
             with self.engine.connect() as connection:
                 connection.execute(DDL(
                     f"ALTER TABLE categories ADD COLUMN {column_name} "
-                    f"{column_type} DEFAULT('{CategoryType.EXPENSE.value}')"
+                    f"{column_type} DEFAULT('{CategoryType.EXPENSE.name}')"
+                ))
+                connection.commit()
+        except OperationalError:
+            pass
+        column = Column("category_type", Enum(CategoryType), default=CategoryType.EXPENSE)
+        column_name = column.compile(dialect=self.engine.dialect)
+        column_type = column.type.compile(self.engine.dialect)
+        try:
+            with self.engine.connect() as connection:
+                connection.execute(DDL(
+                    f"ALTER TABLE expenses ADD COLUMN {column_name} "
+                    f"{column_type} DEFAULT('{CategoryType.EXPENSE.name}')"
                 ))
                 connection.commit()
         except OperationalError:
@@ -364,6 +377,7 @@ class DB:
     def get_expenses_per_category(
         self, *,
         book_id: int,
+        category_type: CategoryType,
         year: Optional[int] = None,
         month: Optional[int] = None,
         day: Optional[int] = None
@@ -378,11 +392,11 @@ class DB:
                 .select_from(self.expense_table)
                 .join(
                     self.category_table,
-                    self.expense_table.c.category_id == self.category_table.c.id and
-                    self.category_table.c.category_type == CategoryType.EXPENSE.value,
+                    self.expense_table.c.category_id == self.category_table.c.id,
                     isouter=True
                 )
                 .where(self.expense_table.c.book_id == book_id)
+                .where(self.expense_table.c.category_type == category_type)
                 .where(self.expense_table.c.deleted == False)
                 .group_by(self.expense_table.c.category_id)
                 .order_by(asc('amount'))
@@ -396,7 +410,13 @@ class DB:
             expenses = connection.execute(statement).all()
         return expenses
 
-    def get_expenses_per_day(self, book_id: int, year: int, month: int):
+    def get_expenses_per_day(
+            self,
+            book_id: int,
+            category_type: Optional[CategoryType],
+            year: int,
+            month: int
+    ) -> Any:
         """Returns expenses groupped by days within specified month."""
         with self.engine.connect() as connection:
             statement = (select(
@@ -411,10 +431,16 @@ class DB:
                 .group_by(self.expense_table.c.day)
                 .order_by(self.expense_table.c.day.asc())
             )
+            if category_type is not None:
+                statement = statement.where(self.expense_table.c.category_type == category_type)
             expenses = connection.execute(statement).all()
         return expenses
 
-    def get_expenses_per_year(self, book_id: int):
+    def get_expenses_per_year(
+            self,
+            book_id: int,
+            category_type: Optional[CategoryType]
+    ) -> Any:
         """Returns expenses groupped by years within specified book."""
         with self.engine.connect() as connection:
             statement = (select(
@@ -427,10 +453,17 @@ class DB:
                 .group_by(self.expense_table.c.year)
                 .order_by(self.expense_table.c.year.asc())
             )
+            if category_type is not None:
+                statement = statement.where(self.expense_table.c.category_type == category_type)
             expenses = connection.execute(statement).all()
         return expenses
 
-    def get_expenses_per_month(self, book_id: int, year: int):
+    def get_expenses_per_month(
+            self,
+            book_id: int,
+            category_type: Optional[CategoryType],
+            year: int
+    ) -> Any:
         """Returns expenses groupped by month within specified year and book."""
         with self.engine.connect() as connection:
             statement = (select(
@@ -444,6 +477,8 @@ class DB:
                 .group_by(self.expense_table.c.month)
                 .order_by(self.expense_table.c.month.asc())
             )
+            if category_type is not None:
+                statement = statement.where(self.expense_table.c.category_type == category_type)
             expenses = connection.execute(statement).all()
         return expenses
 
