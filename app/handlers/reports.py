@@ -465,6 +465,10 @@ class Reports(HandlerBase):
         else:
             self._invalid_request(message, state=state)
             return
+        if category_type == CategoryType.INCOME:
+            category_type_label = __(messages.REPORTS_INCOME, lang=from_user.language_code)
+        else:
+            category_type_label = __(messages.REPORTS_EXPENSE, lang=from_user.language_code)
         records = self.db.get_expenses_per_category(
             book_id=book.id,
             category_type=category_type,
@@ -501,7 +505,8 @@ class Reports(HandlerBase):
             ).format(
                 book_title=book.title,
                 currency=book.currency,
-                period=period
+                period=period,
+                category_type=category_type_label
             )
         )
         total_label = __(messages.TOTAL, lang=from_user.language_code)
@@ -547,6 +552,10 @@ class Reports(HandlerBase):
             month=__(MONTH_LABELS[month], from_user.language_code),
             year=year
         )
+        if category_type == CategoryType.INCOME:
+            category_type_label = __(messages.REPORTS_INCOME, lang=from_user.language_code)
+        else:
+            category_type_label = __(messages.REPORTS_EXPENSE, lang=from_user.language_code)
         fig, ax = plt.subplots()
         bars = ax.bar(days, amounts, label=days, align='center')
         fig.suptitle(
@@ -556,7 +565,8 @@ class Reports(HandlerBase):
             ).format(
                 book_title=book.title,
                 currency=book.currency,
-                period=period
+                period=period,
+                category_type=category_type_label
             )
         )
         total_label = __(messages.TOTAL, lang=from_user.language_code)
@@ -601,6 +611,10 @@ class Reports(HandlerBase):
         total_amount = sum(amounts)
         max_amount = max(amounts)
         period = f'{year}'
+        if category_type == CategoryType.INCOME:
+            category_type_label = __(messages.REPORTS_INCOME, lang=from_user.language_code)
+        else:
+            category_type_label = __(messages.REPORTS_EXPENSE, lang=from_user.language_code)
         fig, ax = plt.subplots()
         bars = ax.bar(months, amounts, label=month_labels, align='center')
         fig.suptitle(
@@ -610,7 +624,8 @@ class Reports(HandlerBase):
             ).format(
                 book_title=book.title,
                 currency=book.currency,
-                period=period
+                period=period,
+                category_type=category_type_label
             )
         )
         total_label = __(messages.TOTAL, lang=from_user.language_code)

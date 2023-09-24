@@ -33,6 +33,31 @@ MONTH_LABELS = {
     12: messages.DECEMBER,
 }
 
+DEFAULT_INCOME_CATEGORIES = {
+    'default': {
+        'Benefits': {},
+        'Debt Payment': {},
+        'Dividends': {},
+        'Insurance': {},
+        'Other': {},
+        'Refund': {},
+        'Rental': {},
+        'Salary': {},
+        'Selling Property': {},
+    },
+    'ru': {
+        'Пособие': {},
+        'Возврат Долга': {},
+        'Дивиденды': {},
+        'Страховка': {},
+        'Другое': {},
+        'Возврат Товара': {},
+        'Аренда': {},
+        'Зарплата': {},
+        'Продажа': {},
+    },
+}
+
 DEFAULT_EXPENSE_CATEGORIES = {
     'default': {
         'Automobile': {
@@ -118,7 +143,7 @@ DEFAULT_EXPENSE_CATEGORIES = {
         'Техника': {
             'Аудио & Видео': {},
             'Гаджеты': {},
-            'Домашняя техника': {},
+            'Домашняя Техника': {},
         },
         'Развлечения': {
             'Аквапарк': {},

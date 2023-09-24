@@ -233,6 +233,9 @@ class DB:
         default_expense_categories = {}
         if 'default_expense_categories' in kwargs:
             default_expense_categories = kwargs.pop('default_expense_categories')
+        default_income_categories = {}
+        if 'default_income_categories' in kwargs:
+            default_income_categories = kwargs.pop('default_income_categories')
         with self.engine.connect() as connection:
             id = connection.execute(
                 insert(self.book_table).values(**kwargs)).inserted_primary_key.id
@@ -247,6 +250,13 @@ class DB:
                 category_type=CategoryType.EXPENSE,
                 parent_id=0,
                 categories=default_expense_categories
+            )
+            self._add_categories(
+                connection=connection,
+                book_id=id,
+                category_type=CategoryType.INCOME,
+                parent_id=0,
+                categories=default_income_categories
             )
             connection.commit()
         return {'id': id, 'book_uid': book_uid}

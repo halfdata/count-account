@@ -215,12 +215,21 @@ CATEGORIES_DELETED = {
 
 CATEGORIES_WELCOME = {
     'default': (
-        'Hey. Let\'s configure categories here. Select any existing category '
+        'OK. Now we configure categories here. Select any existing category '
         'or tap <code>+ Add Category</code> to create a new one.'
     ),
     'ru': (
-        'Давай настроим категории. Выбери существующую категорию '
+        'Теперь настроим сами категории. Выбери существующую категорию '
         'или тапни <code>+ Создать</code>, чтобы создать новую.'
+    ),
+}
+
+CATEGORIES_TYPE_WELCOME = {
+    'default': (
+        'Hey. Let\'s configure categories here. Select type of categories.'
+    ),
+    'ru': (
+        'Давай настроим категории. Выбери группу категорий.'
     ),
 }
 
@@ -278,6 +287,15 @@ EXPENSES_ROOT_SELECT_CATEGORY = {
     ),
 }
 
+EXPENSES_SELECT_CATEGORY_TYPE = {
+    'default': (
+        'Select the type of amount you want to save.'
+    ),
+    'ru': (
+        'Выберите, в какую группу отнести указанную сумму.'
+    ),
+}
+
 EXPENSES_SUCCESSFULLY_CREATED_IN_CATEGORY = {
     'default': (
         '<strong>{amount} {currency}</strong> successfully added to '
@@ -303,8 +321,18 @@ EXPENSES_SUCCESSFULLY_CREATED = {
 }
 
 REPORTS_BOOK_AND_PERIOD = {
-    'default': '{book_title} ({currency}), {period}',
-    'ru': '{book_title} ({currency}), {period}',
+    'default': '{book_title} ({currency}). {category_type}. {period}',
+    'ru': '{book_title} ({currency}). {category_type}. {period}',
+}
+
+REPORTS_EXPENSE = {
+    'default': 'Expenses',
+    'ru': 'Расходы',
+}
+
+REPORTS_INCOME = {
+    'default': 'Income',
+    'ru': 'Доходы',
 }
 
 REPORTS_SELECT_YEAR = {
@@ -424,6 +452,26 @@ BUTTON_DISCONNECT = {
 BUTTON_LANGUAGE = {
     'default': '✎ Language',
     'ru': '✎ Язык',
+}
+
+BUTTON_EXPENSE = {
+    'default': 'Expenses',
+    'ru': 'Расходы',
+}
+
+BUTTON_INCOME = {
+    'default': 'Income',
+    'ru': 'Доходы',
+}
+
+BUTTON_YES = {
+    'default': 'Yes',
+    'ru': 'Да',
+}
+
+BUTTON_NO = {
+    'default': 'No',
+    'ru': 'Нет',
 }
 
 JANUARY = {

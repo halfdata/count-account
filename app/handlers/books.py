@@ -19,7 +19,8 @@ from aiogram.types.user import User
 from handlers import HandlerBase, DBUser
 from utils import messages
 from utils import models
-from utils import __, CURRENCIES, DEFAULT_EXPENSE_CATEGORIES
+from utils import __, CURRENCIES, DEFAULT_EXPENSE_CATEGORIES, DEFAULT_INCOME_CATEGORIES
+from utils import CategoryType
 
 
 class BooksState(StatesGroup):
@@ -30,6 +31,7 @@ class BooksState(StatesGroup):
     title = State()
     currency = State()
     import_categories = State()
+    category_type = State()
     parent_category = State()
     category = State()
     category_title = State()
@@ -47,6 +49,7 @@ class Books(HandlerBase):
         router.message.register(self.title_message, BooksState.title)
         router.callback_query.register(self.currency_callback, BooksState.currency)
         router.callback_query.register(self.import_categories_callback, BooksState.import_categories)
+        router.callback_query.register(self.category_type_callback, BooksState.category_type)
         router.callback_query.register(self.categories_callback, BooksState.category)
         router.message.register(self.category_title_message, BooksState.category_title)
         dp.message.register(self.join, Command('join'))
@@ -308,7 +311,7 @@ class Books(HandlerBase):
             await self.currency(call.message, state, call.from_user)
             return
         if call.data == '/update_categories':
-            await self.categories(call.message, state, call.from_user)
+            await self.category_type(call.message, state, call.from_user)
             return
         if call.data == '/join':
             await state.clear()
@@ -486,11 +489,11 @@ class Books(HandlerBase):
         from_user = from_user or message.from_user
         buttons = [
             InlineKeyboardButton(
-                text='Yes',
+                text=__(messages.BUTTON_YES, lang=from_user.language_code),
                 callback_data='/yes'
             ),
             InlineKeyboardButton(
-                text='No',
+                text=__(messages.BUTTON_NO, lang=from_user.language_code),
                 callback_data='/no'
             ),
         ]
@@ -509,9 +512,14 @@ class Books(HandlerBase):
         data = await state.get_data()
         await state.clear()
         default_expense_categories = {}
+        default_income_categories = {}
         if call.data == '/yes':
             default_expense_categories=__(
                 text_dict=DEFAULT_EXPENSE_CATEGORIES,
+                lang=call.from_user.language_code
+            )
+            default_income_categories=__(
+                text_dict=DEFAULT_INCOME_CATEGORIES,
                 lang=call.from_user.language_code
             )
         book_ids = self.db.add_book(
@@ -519,6 +527,7 @@ class Books(HandlerBase):
             title=data['title'],
             currency=data['currency'],
             created=datetime.utcnow(),
+            default_income_categories=default_income_categories,
             default_expense_categories=default_expense_categories
         )
         await call.message.answer(
@@ -532,6 +541,50 @@ class Books(HandlerBase):
             ),
         )
         await self.books(call.message, state, call.from_user)
+        return
+
+    async def category_type(
+        self,
+        message: Message,
+        state: FSMContext,
+        from_user: Optional[User] = None
+    ) -> None:
+        """Displays category type selector."""
+        await state.set_state(BooksState.category_type)
+        from_user = from_user or message.from_user
+        buttons = [
+            InlineKeyboardButton(
+                text=__(messages.BUTTON_INCOME, lang=from_user.language_code),
+                callback_data=CategoryType.INCOME.name
+            ),
+            InlineKeyboardButton(
+                text=__(messages.BUTTON_EXPENSE, lang=from_user.language_code),
+                callback_data=CategoryType.EXPENSE.name
+            ),
+        ]
+        keyboard_inline = InlineKeyboardMarkup(inline_keyboard=[
+            buttons,
+            [self.back_button(from_user.language_code)]
+        ])
+        await message.answer(
+            text=__(
+                text_dict=messages.CATEGORIES_TYPE_WELCOME,
+                lang=from_user.language_code
+            ),
+            reply_markup=keyboard_inline,
+        )
+
+    async def category_type_callback(self, call: CallbackQuery, state: FSMContext) -> None:
+        """Callback for category type selector."""
+        await call.message.edit_reply_markup(reply_markup=None)
+        if call.data == '/back':
+            await self.actions(call.message, state, call.from_user)
+            return
+        elif call.data == CategoryType.INCOME.name:
+            await state.update_data(category_type=CategoryType.INCOME)
+        else:
+            await state.update_data(category_type=CategoryType.EXPENSE)
+        await self.categories(call.message, state, call.from_user)
         return
 
     async def categories(
@@ -568,10 +621,12 @@ class Books(HandlerBase):
             parent_category = self.db.get_category_by(
                 book_id=book.id,
                 id=int(data['parent_category']),
+                category_type=data['category_type'],
                 deleted=False,
             )
         categories = self.db.get_categories_by(
             book_id=book.id,
+            category_type=data['category_type'],
             parent_id=(0 if not parent_category else parent_category.id),
             deleted=False
         )
@@ -640,6 +695,7 @@ class Books(HandlerBase):
             parent_category = self.db.get_category_by(
                 book_id=book.id,
                 id=int(data['parent_category']),
+                category_type=data['category_type'],
                 deleted=False
             )
 
@@ -672,11 +728,12 @@ class Books(HandlerBase):
             return
         if call.data == '/back':
             if not parent_category:
-                await self.actions(call.message, state, call.from_user)
+                await self.category_type(call.message, state, call.from_user)
                 return
             category = self.db.get_category_by(
                 book_id=book.id,
                 id=int(data['parent_category']),
+                category_type=data['category_type'],
                 deleted=False
             )
             if category:
@@ -690,6 +747,7 @@ class Books(HandlerBase):
         category = self.db.get_category_by(
             book_id=book.id,
             id=category_id,
+            category_type=data['category_type'],
             deleted=False
         )
         if not category:
@@ -756,11 +814,13 @@ class Books(HandlerBase):
             parent_category = self.db.get_category_by(
                 book_id=book.id,
                 id=int(data['parent_category']),
+                category_type=data['category_type'],
                 deleted=False
             )
         category = self.db.get_category_by(
             book_id=book.id,
             parent_id=(0 if not parent_category else parent_category.id),
+            category_type=data['category_type'],
             title=title,
             deleted=False
         )
@@ -775,6 +835,7 @@ class Books(HandlerBase):
         if data['category'] == '/new':
             self.db.add_category(
                 book_id=book.id,
+                category_type=data['category_type'],
                 parent_id=(0 if not parent_category else parent_category.id),
                 title=title,
                 deleted=False
@@ -791,6 +852,7 @@ class Books(HandlerBase):
         category = self.db.get_category_by(
             book_id=book.id,
             id=category_id,
+            category_type=data['category_type'],
             deleted=False
         )
         if not category:

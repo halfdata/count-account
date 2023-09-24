@@ -34,6 +34,7 @@ class Expenses(HandlerBase):
     def __init__(self, db: models.DB, dp: Dispatcher, router: Router) -> None:
         super().__init__(db)
         dp.message.register(self.expenses_message, F.text.regexp(r"^[\-\+]{0,1}\d+\.{0,1}\d*$"))
+        router.callback_query.register(self.selector_category_type_callback, ExpensesState.category_type)
         router.callback_query.register(self.selector_categories_callback, ExpensesState.category)
 
     @HandlerBase.active_book_required
@@ -55,8 +56,6 @@ class Expenses(HandlerBase):
             )
             return
         await state.update_data(amount=amount)
-        await state.update_data(category_type=CategoryType.EXPENSE)
-        await state.update_data(category=0)
         await message.answer(
             text=__(
                 text_dict=messages.EXPENSES_ADD_AMOUNT,
@@ -67,7 +66,48 @@ class Expenses(HandlerBase):
                 book_title=book.title
             ),
         )
-        await self.selector_categories(message, state=state, from_user=message.from_user)
+        await self.selector_category_type(message, state=state, from_user=message.from_user)
+
+    @HandlerBase.active_book_required
+    async def selector_category_type(
+        self,
+        message: Message,
+        state: FSMContext,
+        book: Optional[Any] = None,
+        from_user: Optional[User] = None
+    ) -> None:
+        """Displays message with category type selector."""
+        await state.set_state(ExpensesState.category_type)
+        from_user = from_user or message.from_user
+        buttons = [
+            InlineKeyboardButton(
+                text=__(messages.BUTTON_INCOME, lang=from_user.language_code),
+                callback_data=CategoryType.INCOME.name
+            ),
+            InlineKeyboardButton(
+                text=__(messages.BUTTON_EXPENSE, lang=from_user.language_code),
+                callback_data=CategoryType.EXPENSE.name
+            ),
+        ]
+        keyboard_inline = InlineKeyboardMarkup(inline_keyboard=[buttons])
+        await message.answer(
+            text=__(
+                text_dict=messages.EXPENSES_SELECT_CATEGORY_TYPE,
+                lang=from_user.language_code
+            ),
+            reply_markup=keyboard_inline,
+        )
+
+    async def selector_category_type_callback(self, call: CallbackQuery, state: FSMContext) -> None:
+        """Callback for category type selector."""
+        await call.message.edit_reply_markup(reply_markup=None)
+        if call.data == CategoryType.INCOME.name:
+            await state.update_data(category_type=CategoryType.INCOME)
+        else:
+            await state.update_data(category_type=CategoryType.EXPENSE)
+        await state.update_data(category=0)
+        await self.selector_categories(call.message, state=state, from_user=call.from_user)
+        return
 
     @HandlerBase.active_book_required
     async def selector_categories(
