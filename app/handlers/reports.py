@@ -41,8 +41,6 @@ class Reports(HandlerBase):
     def __init__(self, db: models.DB, dp: Dispatcher, router: Router) -> None:
         super().__init__(db)
         dp.message.register(self.today, Command('today'))
-        dp.message.register(self.yesterday, Command('yesterday'))
-        dp.message.register(self.current_month, Command('current_month'))
         dp.message.register(self.year, Command('year'))
         dp.message.register(self.month, Command('month'))
         dp.message.register(self.day, Command('day'))
@@ -55,74 +53,38 @@ class Reports(HandlerBase):
         self,
         message: Message,
         state: FSMContext,
-        book: Optional[Any] = None,
-        from_user: Optional[User] = None
+        book: Optional[Any] = None
     ) -> None:
         """Entrypoint for 'Today's expenses'."""
         await state.clear()
         ct = datetime.utcnow()
-        await self.per_category_report(
+        income_exists = await self.per_category_report(
             message,
             state=state,
-            from_user=from_user,
+            from_user=message.from_user,
+            book=book,
+            category_type=CategoryType.INCOME,
+            year=ct.year,
+            month=ct.month,
+            day=ct.day
+        )
+        expense_exists = await self.per_category_report(
+            message,
+            state=state,
+            from_user=message.from_user,
             book=book,
             category_type=CategoryType.EXPENSE,
             year=ct.year,
             month=ct.month,
             day=ct.day
         )
-
-    @HandlerBase.active_book_required
-    async def yesterday(
-        self,
-        message: Message,
-        state: FSMContext,
-        book: Optional[Any] = None,
-        from_user: Optional[User] = None
-    ) -> None:
-        """Entrypoint for 'Yesterday's expenses'."""
-        await state.clear()
-        ct = datetime.utcnow() - timedelta(days=1)
-        await self.per_category_report(
-            message,
-            state=state,
-            from_user=from_user,
-            book=book,
-            category_type=CategoryType.EXPENSE,
-            year=ct.year,
-            month=ct.month,
-            day=ct.day
-        )
-
-    @HandlerBase.active_book_required
-    async def current_month(
-        self,
-        message: Message,
-        state: FSMContext,
-        book: Optional[Any] = None,
-        from_user: Optional[User] = None
-    ) -> None:
-        """Entrypoint for 'Expenses for the current month'."""
-        await state.clear()
-        from_user = from_user or message.from_user
-        ct = datetime.utcnow()
-        await self.per_category_report(
-            message,
-            state=state,
-            from_user=from_user,
-            book=book,
-            category_type=CategoryType.EXPENSE,
-            year=ct.year,
-            month=ct.month
-        )
-        await self.per_day_report(
-            message,
-            from_user=from_user,
-            book=book,
-            category_type=CategoryType.EXPENSE,
-            year=ct.year,
-            month=ct.month
-        )
+        if not any((income_exists, expense_exists)):
+            await message.answer(
+                text=__(
+                    text_dict=messages.REPORTS_NO_DATA,
+                    lang=message.from_user.language_code
+                ),
+            )
 
     @HandlerBase.active_book_required
     async def year(
@@ -250,6 +212,21 @@ class Reports(HandlerBase):
             state=state,
             from_user=from_user,
             book=book,
+            category_type=CategoryType.INCOME,
+            year=data['year']
+        )
+        await self.per_month_report(
+            message,
+            from_user=from_user,
+            book=book,
+            category_type=CategoryType.INCOME,
+            year=data['year']
+        )
+        await self.per_category_report(
+            message,
+            state=state,
+            from_user=from_user,
+            book=book,
             category_type=CategoryType.EXPENSE,
             year=data['year']
         )
@@ -349,6 +326,23 @@ class Reports(HandlerBase):
             state=state,
             from_user=from_user,
             book=book,
+            category_type=CategoryType.INCOME,
+            year=data['year'],
+            month=data['month']
+        )
+        await self.per_day_report(
+            message,
+            from_user=from_user,
+            book=book,
+            category_type=CategoryType.INCOME,
+            year=data['year'],
+            month=data['month']
+        )
+        await self.per_category_report(
+            message,
+            state=state,
+            from_user=from_user,
+            book=book,
             category_type=CategoryType.EXPENSE,
             year=data['year'],
             month=data['month']
@@ -427,6 +421,16 @@ class Reports(HandlerBase):
             state=state,
             from_user=from_user,
             book=book,
+            category_type=CategoryType.INCOME,
+            year=data['year'],
+            month=data['month'],
+            day=data['day']
+        )
+        await self.per_category_report(
+            message,
+            state=state,
+            from_user=from_user,
+            book=book,
             category_type=CategoryType.EXPENSE,
             year=data['year'],
             month=data['month'],
@@ -450,7 +454,7 @@ class Reports(HandlerBase):
         year: Optional[int] = None,
         month: Optional[int] = None,
         day: Optional[int] = None
-    ) -> None:
+    ) -> bool:
         """Per category expenses."""
         from_user = from_user or message.from_user
         if year is not None and month is not None and day is not None:
@@ -464,7 +468,7 @@ class Reports(HandlerBase):
             period = f'{year}'
         else:
             self._invalid_request(message, state=state)
-            return
+            return False
         if category_type == CategoryType.INCOME:
             category_type_label = __(messages.REPORTS_INCOME, lang=from_user.language_code)
         else:
@@ -486,13 +490,13 @@ class Reports(HandlerBase):
                     categories.append('Uncategorized')
                 amounts.append(record.amount)
         if not categories:
-            await message.answer(
-                text=__(
-                    text_dict=messages.REPORTS_NO_DATA,
-                    lang=from_user.language_code
-                ),
-            )
-            return
+            # await message.answer(
+            #     text=__(
+            #         text_dict=messages.REPORTS_NO_DATA,
+            #         lang=from_user.language_code
+            #     ),
+            # )
+            return False
         total_amount = sum(amounts)
         max_amount = max(amounts)
 
@@ -526,6 +530,7 @@ class Reports(HandlerBase):
         await message.answer_photo(
             photo=BufferedInputFile(file=image_png, filename='report.png')
         )
+        return True
 
     async def per_day_report(
         self,
@@ -540,6 +545,8 @@ class Reports(HandlerBase):
         from_user = from_user or message.from_user
         records = self.db.get_expenses_per_day(
             book_id=book.id, category_type=category_type, year=year, month=month)
+        if not records:
+            return
         _, last_day = calendar.monthrange(year, month)
         days = [day for day in range(1, last_day + 1)]
         amounts = [0]*last_day
@@ -602,6 +609,8 @@ class Reports(HandlerBase):
         """Per month expenses."""
         from_user = from_user or message.from_user
         records = self.db.get_expenses_per_month(book_id=book.id, category_type=category_type, year=year)
+        if not records:
+            return
         months = [month for month in range(1, 13)]
         month_labels = [__(MONTH_LABELS[month], from_user.language_code) for month in range(1, 13)]
         amounts = [0]*12

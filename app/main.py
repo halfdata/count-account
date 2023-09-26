@@ -32,18 +32,18 @@ async def main():
     await bot.set_my_commands([
         BotCommand(command='start', description='About Count Account'),
         BotCommand(command='books', description='Manage books'),
-        BotCommand(command='today', description='Today\'s expenses'),
-        BotCommand(command='day', description='Expenses for the day'),
-        BotCommand(command='month', description='Expenses for the month'),
-        BotCommand(command='year', description='Expenses for the year'),
+        BotCommand(command='today', description='Today\'s report'),
+        BotCommand(command='day', description='Report for the day'),
+        BotCommand(command='month', description='Report for the month'),
+        BotCommand(command='year', description='Report for the year'),
     ])
     await bot.set_my_commands([
         BotCommand(command='start', description='О боте'),
         BotCommand(command='books', description='Учетные книги'),
-        BotCommand(command='today', description='Расходы за сегодня'),
-        BotCommand(command='day', description='Расходы за день'),
-        BotCommand(command='month', description='Расходы за месяц'),
-        BotCommand(command='year', description='Расходы за год'),
+        BotCommand(command='today', description='Отчет за сегодня'),
+        BotCommand(command='day', description='Отчет за день'),
+        BotCommand(command='month', description='Отчет за месяц'),
+        BotCommand(command='year', description='Отчет за год'),
     ], language_code='ru')
     dp = Dispatcher()
     form_router = Router()
