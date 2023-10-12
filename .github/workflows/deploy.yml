@@ -1,0 +1,32 @@
+name: Deploy recently submitted code into VPS
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  check-build:
+    name: Check if app is built into container successfully
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - run: cd app
+    - run: docker build . --file Dockerfile
+
+  deploy:
+    name: Deploy app into VPS
+    needs: check-build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Install SSH keys
+      run: |
+        install -m 600 -D /dev/null ~/.ssh/id_rsa
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        ssh-keyscan -H ${{ secrets.SSH_HOST }} > ~/.ssh/known_hosts
+    - name: Connect and deploy
+      run: ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd /home/count-account && ls"
+    - name: Cleanup
+      run: rm -rf ~/.ssh
