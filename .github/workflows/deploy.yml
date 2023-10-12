@@ -13,9 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - run: cd app
-    - run: ls
-    - run: docker build . --file Dockerfile
+    - run: cd app && docker build . --file Dockerfile
 
   deploy:
     name: Deploy app into VPS
