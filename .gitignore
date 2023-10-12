@@ -143,3 +143,5 @@ GitHub.sublime-settings
 .env.db.data
 env.data
 db/
+credentials.json
+docker-compose-local.yml
