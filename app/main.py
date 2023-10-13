@@ -25,6 +25,7 @@ DB_PATH = os.getenv(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 )
 DB_FILE = 'db.sqlite3'
+ENABLE_BACKUP = os.getenv('ENABLE_BACKUP')
 GOOGLE_CREDENTIALS_FILE = os.getenv(
     'GOOGLE_CREDENTIALS_FILE',
      os.path.join(
@@ -42,6 +43,8 @@ db = models.DB(f'sqlite:///{DB_PATH}/{DB_FILE}')
 
 async def task_backup():
     """Task to backup DB into Google Drive."""
+    if not ENABLE_BACKUP:
+        return
     while True:
         try:
             credentials = service_account.Credentials.from_service_account_file(GOOGLE_CREDENTIALS_FILE)

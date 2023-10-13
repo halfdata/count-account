@@ -490,12 +490,6 @@ class Reports(HandlerBase):
                     categories.append('Uncategorized')
                 amounts.append(record.amount)
         if not categories:
-            # await message.answer(
-            #     text=__(
-            #         text_dict=messages.REPORTS_NO_DATA,
-            #         lang=from_user.language_code
-            #     ),
-            # )
             return False
         total_amount = sum(amounts)
         max_amount = max(amounts)
@@ -515,11 +509,17 @@ class Reports(HandlerBase):
         )
         total_label = __(messages.TOTAL, lang=from_user.language_code)
         ax.set_title(f'{total_label}: {total_amount:.2f} {book.currency}', fontweight='bold')
+        if len(categories) < 10:
+            label_size = 12
+        elif len(categories) < 20:
+            label_size = 10
+        else:
+            label_size = 8
         low_values = [f'{v:.2f}' if v < 0.15 * max_amount else '' for v in amounts]
         nonlow_values = [f'{v:.2f}' if v >= 0.15 * max_amount else '' for v in amounts]
-        ax.bar_label(bars, nonlow_values,
+        ax.bar_label(bars, nonlow_values, size=label_size,
                      label_type='center', color='white')
-        ax.bar_label(bars, low_values,
+        ax.bar_label(bars, low_values, size=label_size,
                      label_type='edge', color='grey', padding=3)
         ax.set_xlabel(book.currency)
         buffer = BytesIO()
