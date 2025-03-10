@@ -4,6 +4,7 @@ import asyncio
 import logging
 import os
 import sys
+
 from datetime import datetime
 
 from aiogram import Bot, Dispatcher, Router
@@ -23,7 +24,7 @@ DB_PATH = os.getenv(
     'DB_PATH',
     os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 )
-DB_FILE = 'db.sqlite3'
+DB_FILE = 'count-account-db.sqlite3'
 ENABLE_BACKUP = os.getenv('ENABLE_BACKUP')
 GOOGLE_CREDENTIALS_FILE = os.getenv(
     'GOOGLE_CREDENTIALS_FILE',

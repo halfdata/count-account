@@ -4,7 +4,7 @@ services:
   bot:
     build: ./app
     volumes:
-      - /home/count-account-db:/usr/src/db
+      - /home/tikka-db:/usr/src/db
       - /home/count-account/credentials.json:/usr/src/credentials.json
     env_file:
       - ./env.data
