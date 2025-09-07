@@ -137,6 +137,7 @@ GitHub.sublime-settings
 .history
 
 # others
+**/.vscode
 **/migrations/[0-9]*.py
 **/__pycache__
 .env.data
@@ -145,3 +146,4 @@ env.data
 db/
 credentials.json
 docker-compose-local.yml
+**.sqlite3

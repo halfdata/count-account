@@ -300,12 +300,16 @@ EXPENSES_SUCCESSFULLY_CREATED_IN_CATEGORY = {
     'default': (
         '<strong>{amount} {currency}</strong> successfully added to '
         '<strong>{category_title}</strong> category of '
-        '<strong>{book_title}</strong> book.'
+        '<strong>{book_title}</strong> book. '
+        'Total amounts added in <strong>{month_label} {year}</stronh> '
+        'is <strong>{total_amount} {currency}</strong>.'
     ),
     'ru': (
         '<strong>{amount} {currency}</strong> добавлено в категорию '
         '<strong>{category_title}</strong> учетной книги '
-        '<strong>{book_title}</strong>.'
+        '<strong>{book_title}</strong>. '
+        'Всего за <strong>{month_label} {year}</strong> '
+        'добавлено <strong>{total_amount} {currency}</strong>.'
     ),
 }
 

@@ -19,6 +19,7 @@ from utils import CategoryType
 from utils import messages
 from utils import models
 from utils import __
+from utils import MONTH_LABELS
 
 
 class ExpensesState(StatesGroup):
@@ -209,6 +210,13 @@ class Expenses(HandlerBase):
                 created=created,
                 deleted=False
             )
+            total_expenses = self.db.get_expenses(
+                book_id=book.id,
+                category_id=(0 if not category else category.id),
+                year=created.year,
+                month=created.month,
+                day=created.day,
+            )
             await state.clear()
             if category:
                 await call.message.answer(
@@ -219,7 +227,13 @@ class Expenses(HandlerBase):
                         amount='{:.2f}'.format(amount),
                         currency=book.currency,
                         category_title=category.title,
-                        book_title=book.title
+                        book_title=book.title,
+                        year=created.year,
+                        month_label=__(
+                            text_dict=MONTH_LABELS[created.month],
+                            lang=call.from_user.language_code
+                        ),
+                        total_amount='{:.2f}'.format(total_expenses),
                     )
                 )
             else:

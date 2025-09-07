@@ -384,6 +384,35 @@ class DB:
             connection.commit()
         return expense_id
 
+    def get_expenses(
+        self, *,
+        book_id: int,
+        category_id: Optional[int] = None,
+        year: Optional[int] = None,
+        month: Optional[int] = None,
+        day: Optional[int] = None
+    ):
+        """Returns expenses."""
+        with self.engine.connect() as connection:
+            statement = (
+                select(func.sum(self.expense_table.c.amount).label('amount'))
+                .select_from(self.expense_table)
+                .where(self.expense_table.c.book_id == book_id)
+                .where(self.expense_table.c.category_type == CategoryType.EXPENSE)
+                .where(self.expense_table.c.deleted == False)
+                .order_by(asc('amount'))
+            )
+            if category_id is not None:
+                statement = statement.where(self.expense_table.c.category_id == category_id)
+            if year is not None:
+                statement = statement.where(self.expense_table.c.year == year)
+            if month is not None:
+                statement = statement.where(self.expense_table.c.month == month)
+            if day is not None:
+                statement = statement.where(self.expense_table.c.day == day)
+            expenses = connection.execute(statement).first()
+        return expenses.amount
+
     def get_expenses_per_category(
         self, *,
         book_id: int,
