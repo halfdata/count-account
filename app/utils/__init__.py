@@ -11,10 +11,14 @@ LANGUAGES = {
 
 CURRENCIES = {
     'CAD': 'Canadian Dollar',
+    'CZK': 'Czech Koruna',
     'EUR': 'Euro',
+    'HUF': 'Hungarian Forint',
     'PLN': 'Polish Zloty',
     'RUB': 'Russian Ruble',
     'SGD': 'Singaporean Dollar',
+    'THB': 'Thai Baht',
+    'TRY': 'Turkish Lira',
     'USD': 'US Dollar',
 }
 
