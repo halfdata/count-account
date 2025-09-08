@@ -249,6 +249,17 @@ CATEGORIES_ADD_TITLE = {
     'ru': 'Введите название категории.',
 }
 
+CATEGORIES_SET_LIMITS = {
+    'default': (
+        'Please send monthly limit for category <strong>{title}</strong>. '
+        'Current limit: <strong>{limit}</strong>.'
+    ),
+    'ru': (
+        'Введите месячный лимит для категории <strong>{title}</strong>. '
+        'Текущий лимит: <strong>{limit}</strong>.'
+    ),
+}
+
 EXPENSES_ADD_AMOUNT = {
     'default': (
         'Add <strong>{amount} {currency}</strong> to the book '
@@ -431,6 +442,11 @@ BUTTON_REMOVE = {
 BUTTON_TITLE = {
     'default': '✎ Title',
     'ru': '✎ Название',
+}
+
+BUTTON_LIMIT = {
+    'default': '✎ Limits',
+    'ru': '✎ Лимиты',
 }
 
 BUTTON_CURRENCY = {

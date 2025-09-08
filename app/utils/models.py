@@ -4,7 +4,7 @@ from secrets import token_urlsafe
 from typing import Any, Optional
 
 from sqlalchemy import Table, Index, Column
-from sqlalchemy import Integer, String, DateTime, Boolean, Text, Float, Enum
+from sqlalchemy import Integer, String, DateTime, Boolean, Text, Float, Enum, Text
 from sqlalchemy import MetaData, DDL
 from sqlalchemy import create_engine, Engine
 from sqlalchemy import select, insert, update, func, asc
@@ -46,7 +46,6 @@ class DB:
             Index("idx_log_username", "username"),
             Index("idx_log_created", "created"),
         )
-
         self.user_table = Table(
             "users",
             self.metadata_obj,
@@ -78,6 +77,7 @@ class DB:
             Column("book_id", Integer),
             Column("category_type", Enum(CategoryType), default=CategoryType.EXPENSE),
             Column("title", String(255)),
+            Column("options", Text, default=''),
             Column("deleted", Boolean, default=False),
             Index("idx_categories_parent_id", "parent_id"),
             Index("idx_categories_book_title", "book_id", "title"),
@@ -116,6 +116,18 @@ class DB:
 
     def _alter_schema(self) -> None:
         """Alter database schema, if necessary."""
+        column = Column("options", Text, default='')
+        column_name = column.compile(dialect=self.engine.dialect)
+        column_type = column.type.compile(self.engine.dialect)
+        try:
+            with self.engine.connect() as connection:
+                connection.execute(DDL(
+                    f"ALTER TABLE categories ADD COLUMN {column_name} "
+                    f"{column_type} DEFAULT('')"
+                ))
+                connection.commit()
+        except OperationalError:
+            pass
         column = Column("category_type", Enum(CategoryType), default=CategoryType.EXPENSE)
         column_name = column.compile(dialect=self.engine.dialect)
         column_type = column.type.compile(self.engine.dialect)

@@ -215,7 +215,6 @@ class Expenses(HandlerBase):
                 category_id=(0 if not category else category.id),
                 year=created.year,
                 month=created.month,
-                day=created.day,
             )
             await state.clear()
             if category:

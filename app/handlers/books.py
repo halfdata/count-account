@@ -647,6 +647,10 @@ class Books(HandlerBase):
                     text=__(messages.BUTTON_TITLE, lang=from_user.language_code),
                     callback_data='/update_title'
                 ),
+                # InlineKeyboardButton(
+                #     text=__(messages.BUTTON_LIMIT, lang=from_user.language_code),
+                #     callback_data='/set_limits'
+                # ),
                 InlineKeyboardButton(
                     text=__(messages.BUTTON_REMOVE, lang=from_user.language_code),
                     callback_data='/delete'
@@ -707,6 +711,10 @@ class Books(HandlerBase):
             await state.update_data(category=data['parent_category'])
             await self.category_title(call.message, state, call.from_user)
             return
+        # if call.data == '/set_limits':
+        #     await state.update_data(category=data['parent_category'])
+        #     await self.category_limits(call.message, state, call.from_user)
+        #     return
         if call.data == '/delete':
             category = self.db.get_category_by(
                 book_id=book.id,
@@ -755,6 +763,22 @@ class Books(HandlerBase):
             return
         await state.update_data(parent_category=category_id)
         await self._categories(call.message, state, call.from_user)
+
+    # async def category_limits(
+    #     self,
+    #     message: Message,
+    #     state: FSMContext,
+    #     from_user: Optional[User] = None
+    # ) -> None:
+    #     """Displays message to request category limits."""
+    #     await state.set_state(BooksState.category_title)
+    #     from_user = from_user or message.from_user
+    #     await message.answer(
+    #         text=__(
+    #             text_dict=messages.CATEGORIES_SET_LIMITS,
+    #             lang=from_user.language_code
+    #         ).format(title=title),
+    #     )
 
     async def category_title(
         self,
