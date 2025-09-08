@@ -1,6 +1,7 @@
 """Handlers for reports workflow."""
 
 import calendar
+import json
 from datetime import datetime, timedelta
 from io import BytesIO
 from typing import Any, Optional
@@ -457,6 +458,7 @@ class Reports(HandlerBase):
     ) -> bool:
         """Per category expenses."""
         from_user = from_user or message.from_user
+        monthly_report = False
         if year is not None and month is not None and day is not None:
             period = f'{year}-{month:02}-{day:02}'
         elif year is not None and month is not None:
@@ -464,6 +466,7 @@ class Reports(HandlerBase):
                 month=__(MONTH_LABELS[month], from_user.language_code),
                 year=year
             )
+            monthly_report = True
         elif year is not None:
             period = f'{year}'
         else:
@@ -482,20 +485,41 @@ class Reports(HandlerBase):
         )
         categories = []
         amounts = []
+        colors = []
         for record in records:
             if record.amount:
+                amounts.append(record.amount)
                 if record.category_title:
                     categories.append(record.category_title)
                 else:
                     categories.append('Uncategorized')
-                amounts.append(record.amount)
+                category = self.db.get_category_by(
+                    book_id = book.id,
+                    id = record.category_id,
+                )
+                if monthly_report:
+                    try:
+                        options = json.loads(category.options)
+                    except Exception:
+                        options = {}
+                    monthly_limit = options.get('monthly_limit')
+                    if monthly_limit:
+                        if record.amount <= monthly_limit:
+                            colors.append('#A1D99B')
+                        else:
+                            colors.append('#FC9272')
+                    else:
+                        colors.append('#6BAED6')
+                else:
+                    colors.append('#6BAED6')
+
         if not categories:
             return False
         total_amount = sum(amounts)
         max_amount = max(amounts)
 
         fig, ax = plt.subplots()
-        bars = ax.barh(categories, amounts, label=categories)
+        bars = ax.barh(categories, amounts, label=categories, color=colors)
         fig.suptitle(
             __(
                 text_dict=messages.REPORTS_BOOK_AND_PERIOD,
@@ -564,7 +588,7 @@ class Reports(HandlerBase):
         else:
             category_type_label = __(messages.REPORTS_EXPENSE, lang=from_user.language_code)
         fig, ax = plt.subplots()
-        bars = ax.bar(days, amounts, label=days, align='center')
+        bars = ax.bar(days, amounts, label=days, align='center', color='#6BAED6')
         fig.suptitle(
             __(
                 text_dict=messages.REPORTS_BOOK_AND_PERIOD,
