@@ -329,7 +329,7 @@ EXPENSES_SUCCESSFULLY_CREATED_IN_CATEGORY = {
         '<strong>{amount} {currency}</strong> successfully added to '
         '<strong>{category_title}</strong> category of '
         '<strong>{book_title}</strong> book. '
-        'Total amounts added in <strong>{month_label} {year}</stronh> '
+        'Total amounts added in <strong>{month_label} {year}</strong> '
         'is <strong>{total_amount} {currency}</strong>. '
         'Monthly limit: <strong>{monthly_limit}</strong>.'
     ),
