@@ -410,7 +410,7 @@ class DB:
                 select(func.sum(self.expense_table.c.amount).label('amount'))
                 .select_from(self.expense_table)
                 .where(self.expense_table.c.book_id == book_id)
-                .where(self.expense_table.c.category_type == CategoryType.EXPENSE)
+                # .where(self.expense_table.c.category_type == CategoryType.EXPENSE)
                 .where(self.expense_table.c.deleted == False)
                 .order_by(asc('amount'))
             )

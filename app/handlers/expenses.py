@@ -232,7 +232,7 @@ class Expenses(HandlerBase):
                             text_dict=MONTH_LABELS[created.month],
                             lang=call.from_user.language_code
                         ),
-                        total_amount='{:.2f}'.format(total_expenses),
+                        total_amount='{:.2f}'.format(total_expenses or 0),
                     )
                 )
             else:
