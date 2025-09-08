@@ -176,6 +176,18 @@ CATEGORIES_SUCCESSFULLY_CREATED = {
     'ru': 'Категория <strong>{title}</strong> создана.',
 }
 
+CATEGORIES_LIMIT_UPDATED = {
+    'default': 'The limit successfully updated.',
+    'ru': 'Лимит обновлен.',
+}
+
+CATEGORIES_LIMIT_INCORRECT = {
+    'default': (
+        'Hm. Seems the limit is not valid numeric value.'
+    ),
+    'ru': 'Кажется, лимит имеет неверное значение.',
+}
+
 CATEGORIES_TITLE_UPDATED = {
     'default': 'The title successfully updated.',
     'ru': 'Название обновлено.',
@@ -249,7 +261,12 @@ CATEGORIES_ADD_TITLE = {
     'ru': 'Введите название категории.',
 }
 
-CATEGORIES_SET_LIMITS = {
+CATEGORIES_NO_LIMIT = {
+    'default': 'no limit',
+    'ru': 'не установлен',
+}
+
+CATEGORIES_SET_LIMIT = {
     'default': (
         'Please send monthly limit for category <strong>{title}</strong>. '
         'Current limit: <strong>{limit}</strong>.'
@@ -313,14 +330,16 @@ EXPENSES_SUCCESSFULLY_CREATED_IN_CATEGORY = {
         '<strong>{category_title}</strong> category of '
         '<strong>{book_title}</strong> book. '
         'Total amounts added in <strong>{month_label} {year}</stronh> '
-        'is <strong>{total_amount} {currency}</strong>.'
+        'is <strong>{total_amount} {currency}</strong>. '
+        'Monthly limit: <strong>{monthly_limit}</strong>.'
     ),
     'ru': (
         '<strong>{amount} {currency}</strong> добавлено в категорию '
         '<strong>{category_title}</strong> учетной книги '
         '<strong>{book_title}</strong>. '
         'Всего за <strong>{month_label} {year}</strong> '
-        'добавлено <strong>{total_amount} {currency}</strong>.'
+        'добавлено <strong>{total_amount} {currency}</strong>. '
+        'Месячный лимит: <strong>{monthly_limit}</strong>.'
     ),
 }
 

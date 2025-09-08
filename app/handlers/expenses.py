@@ -1,4 +1,5 @@
 """Handlers for expenses workflow."""
+import json
 
 from datetime import datetime
 from typing import Any, Optional
@@ -218,6 +219,18 @@ class Expenses(HandlerBase):
             )
             await state.clear()
             if category:
+                try:
+                    options = json.loads(category.options)
+                except Exception:
+                    options = {}
+                monthly_limit = options.get('monthly_limit')
+                if monthly_limit:
+                    monthly_limit_str = f'{monthly_limit:.2f} {book.currency}'
+                else:
+                    monthly_limit_str = __(
+                        text_dict=messages.CATEGORIES_NO_LIMIT,
+                        lang=call.from_user.language_code,
+                    )
                 await call.message.answer(
                     text=__(
                         text_dict=messages.EXPENSES_SUCCESSFULLY_CREATED_IN_CATEGORY,
@@ -233,6 +246,7 @@ class Expenses(HandlerBase):
                             lang=call.from_user.language_code
                         ),
                         total_amount='{:.2f}'.format(total_expenses or 0),
+                        monthly_limit=monthly_limit_str,
                     )
                 )
             else:

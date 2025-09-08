@@ -1,5 +1,6 @@
 """Handlers for reports workflow."""
 
+import json
 import re
 from datetime import datetime
 from typing import Optional
@@ -35,6 +36,7 @@ class BooksState(StatesGroup):
     parent_category = State()
     category = State()
     category_title = State()
+    category_limit = State()
 
 
 class Books(HandlerBase):
@@ -52,6 +54,7 @@ class Books(HandlerBase):
         router.callback_query.register(self.category_type_callback, BooksState.category_type)
         router.callback_query.register(self.categories_callback, BooksState.category)
         router.message.register(self.category_title_message, BooksState.category_title)
+        dp.message.register(self.category_limit_message, BooksState.category_limit)
         dp.message.register(self.join, Command('join'))
 
     async def books(
@@ -647,10 +650,10 @@ class Books(HandlerBase):
                     text=__(messages.BUTTON_TITLE, lang=from_user.language_code),
                     callback_data='/update_title'
                 ),
-                # InlineKeyboardButton(
-                #     text=__(messages.BUTTON_LIMIT, lang=from_user.language_code),
-                #     callback_data='/set_limits'
-                # ),
+                InlineKeyboardButton(
+                    text=__(messages.BUTTON_LIMIT, lang=from_user.language_code),
+                    callback_data='/set_limit'
+                ),
                 InlineKeyboardButton(
                     text=__(messages.BUTTON_REMOVE, lang=from_user.language_code),
                     callback_data='/delete'
@@ -711,10 +714,10 @@ class Books(HandlerBase):
             await state.update_data(category=data['parent_category'])
             await self.category_title(call.message, state, call.from_user)
             return
-        # if call.data == '/set_limits':
-        #     await state.update_data(category=data['parent_category'])
-        #     await self.category_limits(call.message, state, call.from_user)
-        #     return
+        if call.data == '/set_limit':
+            await state.update_data(category=data['parent_category'])
+            await self.category_limit(call.message, state, call.from_user)
+            return
         if call.data == '/delete':
             category = self.db.get_category_by(
                 book_id=book.id,
@@ -764,21 +767,101 @@ class Books(HandlerBase):
         await state.update_data(parent_category=category_id)
         await self._categories(call.message, state, call.from_user)
 
-    # async def category_limits(
-    #     self,
-    #     message: Message,
-    #     state: FSMContext,
-    #     from_user: Optional[User] = None
-    # ) -> None:
-    #     """Displays message to request category limits."""
-    #     await state.set_state(BooksState.category_title)
-    #     from_user = from_user or message.from_user
-    #     await message.answer(
-    #         text=__(
-    #             text_dict=messages.CATEGORIES_SET_LIMITS,
-    #             lang=from_user.language_code
-    #         ).format(title=title),
-    #     )
+    async def category_limit(
+        self,
+        message: Message,
+        state: FSMContext,
+        from_user: Optional[User] = None
+    ) -> None:
+        """Displays message to request category limit."""
+        await state.set_state(BooksState.category_limit)
+        from_user = from_user or message.from_user
+        data = await state.get_data()
+        book_id = int(data['book'])
+        book = self.db.get_book_by(
+            user_id=from_user.id,
+            id=book_id,
+            deleted=False
+        )
+        if not book:
+            await self._invalid_request(message, state)
+            return
+        parent_category = None
+        if 'parent_category' in data:
+            parent_category = self.db.get_category_by(
+                book_id=book.id,
+                id=int(data['parent_category']),
+                category_type=data['category_type'],
+                deleted=False
+            )
+        if not parent_category:
+            await self._invalid_request(message, state)
+            return
+        try:
+            options = json.loads(parent_category.options)
+        except Exception:
+            options = {}
+        monthly_limit = options.get('monthly_limit')
+        if monthly_limit:
+            monthly_limit_str = f'{monthly_limit:.2f} {book.currency}'
+        else:
+            monthly_limit_str = __(
+                text_dict=messages.CATEGORIES_NO_LIMIT,
+                lang=from_user.language_code
+            )
+        await message.answer(
+            text=__(
+                text_dict=messages.CATEGORIES_SET_LIMIT,
+                lang=from_user.language_code
+            ).format(title=parent_category.title, limit=monthly_limit_str),
+        )
+
+    async def category_limit_message(self, message: Message, state: FSMContext) -> None:
+        """Handles entered category limit."""
+        data = await state.get_data()
+        book_id = int(data['book'])
+        book = self.db.get_book_by(
+            user_id=message.from_user.id,
+            id=book_id,
+            deleted=False
+        )
+        if not book:
+            await self._invalid_request(message, state)
+            return
+        parent_category = None
+        if 'parent_category' in data:
+            parent_category = self.db.get_category_by(
+                book_id=book.id,
+                id=int(data['parent_category']),
+                category_type=data['category_type'],
+                deleted=False
+            )
+        if not parent_category:
+            await self._invalid_request(message, state)
+            return
+        amount_pattern = re.compile(r'^\d+\.{0,1}\d*$')
+        limit_str = message.text.strip()
+        if not amount_pattern.match(limit_str):
+            await message.answer(
+                text=__(
+                    text_dict=messages.CATEGORIES_LIMIT_INCORRECT,
+                    lang=message.from_user.language_code
+                ),
+            )
+            return
+        try:
+            options = json.loads(parent_category.options)
+        except Exception:
+            options = {}
+        options['monthly_limit'] = float(limit_str)
+        self.db.update_category(id=parent_category.id, options=json.dumps(options))       
+        await message.answer(
+            text=__(
+                text_dict=messages.CATEGORIES_LIMIT_UPDATED,
+                lang=message.from_user.language_code
+            ),
+        )
+        await self._categories(message, state, message.from_user)
 
     async def category_title(
         self,
