@@ -504,10 +504,12 @@ class Reports(HandlerBase):
                         options = {}
                     monthly_limit = options.get('monthly_limit')
                     if monthly_limit:
-                        if record.amount <= monthly_limit:
-                            colors.append('#A1D99B')
-                        else:
+                        if record.amount > monthly_limit:
                             colors.append('#FC9272')
+                        elif record.amount > monthly_limit * 0.8:
+                            colors.append('#FFD98E')
+                        else:
+                            colors.append('#A1D99B')
                     else:
                         colors.append('#6BAED6')
                 else:
@@ -649,7 +651,7 @@ class Reports(HandlerBase):
         else:
             category_type_label = __(messages.REPORTS_EXPENSE, lang=from_user.language_code)
         fig, ax = plt.subplots()
-        bars = ax.bar(months, amounts, label=month_labels, align='center')
+        bars = ax.bar(months, amounts, label=month_labels, align='center', color='#6BAED6')
         fig.suptitle(
             __(
                 text_dict=messages.REPORTS_BOOK_AND_PERIOD,
